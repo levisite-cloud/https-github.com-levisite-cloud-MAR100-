@@ -180,6 +180,15 @@ export interface SuperBotSkill {
   icone: string;
 }
 
+export interface BotAcaoLog {
+  id: string;
+  timestamp: string;
+  clienteNome: string;
+  tipo: 'leitura_msg' | 'calculo_ia' | 'envio_orcamento' | 'visao_planta' | 'auto_followup' | 'conversao_kanban' | 'geracao_pdf' | 'conexao_qr';
+  descricao: string;
+  status: 'executando' | 'concluido';
+}
+
 export interface BotConfig {
   ativo: boolean;
   nomeRobo: string;

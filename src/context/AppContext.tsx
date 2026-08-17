@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   Atendimento,
+  BotAcaoLog,
   BotConfig,
   BotConnectionStatus,
   ConversaWhatsApp,
@@ -57,9 +58,12 @@ interface AppContextType {
   conversas: ConversaWhatsApp[];
   selectedConversaId: string | null;
   setSelectedConversaId: (id: string | null) => void;
+  botLogs: BotAcaoLog[];
+  addBotLog: (log: Omit<BotAcaoLog, 'id' | 'timestamp'>) => void;
   updateBotConfig: (updates: Partial<BotConfig>) => void;
-  connectBot: () => void;
+  connectBot: (instant?: boolean) => void;
   disconnectBot: () => void;
+  simulateIncomingLeadAuto: () => Promise<void>;
   sendChatMessage: (
     conversaId: string,
     texto: string,
@@ -356,37 +360,164 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const [botLogs, setBotLogs] = useState<BotAcaoLog[]>([
+    {
+      id: 'log-1',
+      timestamp: '14:50:02',
+      clienteNome: 'Mariana Duarte',
+      tipo: 'conexao_qr',
+      descricao: 'Sessão WhatsApp Multi-Device ativa com número comercial (11) 98765-4321.',
+      status: 'concluido',
+    },
+    {
+      id: 'log-2',
+      timestamp: '14:51:15',
+      clienteNome: 'Mariana Duarte',
+      tipo: 'calculo_ia',
+      descricao: 'IA calculou bancada 2,40m x 0,60m em Quartzo Calacatta: R$ 3.850,00.',
+      status: 'concluido',
+    },
+    {
+      id: 'log-3',
+      timestamp: '14:51:18',
+      clienteNome: 'Mariana Duarte',
+      tipo: 'geracao_pdf',
+      descricao: 'Proposta Comercial PDF gerada com Chave PIX e enviada no WhatsApp.',
+      status: 'concluido',
+    },
+  ]);
+
+  const addBotLog = (log: Omit<BotAcaoLog, 'id' | 'timestamp'>) => {
+    const newLog: BotAcaoLog = {
+      ...log,
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    };
+    setBotLogs((prev) => [newLog, ...prev.slice(0, 19)]);
+  };
+
   // Bot Operations
   const updateBotConfig = (updates: Partial<BotConfig>) => {
     setBotConfig((prev) => ({ ...prev, ...updates }));
     addToast('Robô Atualizado', 'Configurações do WhatsApp Bot salvas!', 'success');
   };
 
-  const connectBot = () => {
+  const connectBot = (instant: boolean = false) => {
+    if (instant) {
+      setBotStatus('connected');
+      setBotConfig((prev) => ({
+        ...prev,
+        ativo: true,
+        conectadoEm: new Date().toISOString(),
+        bateria: 98,
+      }));
+      addBotLog({
+        clienteNome: 'Sistema',
+        tipo: 'conexao_qr',
+        descricao: 'QR Code validado! Robô WhatsApp conectado e em modo autônomo 24h.',
+        status: 'concluido',
+      });
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      } catch {}
+      addToast('WhatsApp Conectado!', 'Robô pronto para responder clientes 24h.', 'success');
+      return;
+    }
+
     setBotStatus('pairing');
+    addBotLog({
+      clienteNome: 'Sistema',
+      tipo: 'conexao_qr',
+      descricao: 'Gerando QR Code dinâmico para pareamento com o celular...',
+      status: 'executando',
+    });
     addToast('Gerando QR Code', 'Aponte a câmera do WhatsApp para conectar...', 'info');
 
     setTimeout(() => {
       setBotStatus('connected');
       setBotConfig((prev) => ({
         ...prev,
+        ativo: true,
         conectadoEm: new Date().toISOString(),
-        bateria: 95,
+        bateria: 98,
       }));
+      addBotLog({
+        clienteNome: 'Sistema',
+        tipo: 'conexao_qr',
+        descricao: 'QR Code lido com sucesso! Robô ativo e respondendo em tempo real.',
+        status: 'concluido',
+      });
       try {
         confetti({
-          particleCount: 60,
+          particleCount: 70,
           spread: 60,
-          origin: { y: 0.7 },
+          origin: { y: 0.6 },
         });
       } catch {}
       addToast('WhatsApp Conectado!', 'Robô pronto para responder clientes 24h.', 'success');
-    }, 2800);
+    }, 2200);
   };
 
   const disconnectBot = () => {
     setBotStatus('disconnected');
+    addBotLog({
+      clienteNome: 'Sistema',
+      tipo: 'conexao_qr',
+      descricao: 'Sessão WhatsApp desconectada pelo operador.',
+      status: 'concluido',
+    });
     addToast('WhatsApp Desconectado', 'A sessão com o celular foi encerrada.', 'warning');
+  };
+
+  // Autonomous Lead Simulator (Simula o robô agindo sozinho via WhatsApp)
+  const simulateIncomingLeadAuto = async () => {
+    const leadsExemplos = [
+      {
+        nome: 'Dra. Vanessa Martins',
+        tel: '(11) 98877-2211',
+        origem: 'WhatsApp Orgânico' as const,
+        msg: 'Olá, boa tarde! Gostaria de um orçamento para ilha e bancada de cozinha em Granito Preto São Gabriel de 3,20m x 0,90m com cooktop e cuba inox.',
+      },
+      {
+        nome: 'Arq. Lucas Albuquerque',
+        tel: '(11) 97766-3322',
+        origem: 'Indicação Arquiteto' as const,
+        msg: 'Boa tarde! Preciso cotar lavatório de suíte master com cuba esculpida em Mármore Branco Paraná de 1,60m x 0,55m. Vocês fazem medição no local?',
+      },
+      {
+        nome: 'Eng. Roberto Construtora',
+        tel: '(11) 96655-4433',
+        origem: 'Google' as const,
+        msg: 'Olá! Temos um projeto para 4 bancadas em Quartzo Branco Stellar. Qual o valor aproximado do m² com instalação inclusa?',
+      },
+      {
+        nome: 'Juliana Costa (Reforma)',
+        tel: '(11) 95544-3322',
+        origem: 'Instagram Ads' as const,
+        msg: 'Olá! Estou reformando meu apartamento e quero trocar a pia da cozinha por Dekton ou Quartzito. Vocês têm mostruário e parcelam no cartão?',
+      },
+    ];
+
+    const aleatorio = leadsExemplos[Math.floor(Math.random() * leadsExemplos.length)];
+    const newId = createNewConversa(aleatorio.nome, aleatorio.tel);
+
+    addBotLog({
+      clienteNome: aleatorio.nome,
+      tipo: 'leitura_msg',
+      descricao: `📩 Nova mensagem de ${aleatorio.nome}: "${aleatorio.msg.slice(0, 50)}..."`,
+      status: 'concluido',
+    });
+
+    addToast('Novo Lead no WhatsApp', `${aleatorio.nome} enviou uma mensagem pedindo orçamento!`, 'info');
+
+    // Simulate client sending message and bot replying
+    setTimeout(async () => {
+      await sendChatMessage(newId, aleatorio.msg, 'cliente');
+    }, 600);
   };
 
   const createNewConversa = (nome: string, telefone: string): string => {
@@ -892,9 +1023,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         conversas,
         selectedConversaId,
         setSelectedConversaId,
+        botLogs,
+        addBotLog,
         updateBotConfig,
         connectBot,
         disconnectBot,
+        simulateIncomingLeadAuto,
         sendChatMessage,
         sendImageAttachment,
         generatePdfProposal,

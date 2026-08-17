@@ -47,6 +47,10 @@ import {
   SlidersHorizontal,
   ChevronRight,
   Sparkle,
+  Activity,
+  Play,
+  Pause,
+  Terminal,
 } from 'lucide-react';
 import { ConversaWhatsApp, ItemTabelaPedra } from '../types';
 
@@ -57,9 +61,12 @@ export const WhatsAppBotView: React.FC = () => {
     conversas,
     selectedConversaId,
     setSelectedConversaId,
+    botLogs,
+    addBotLog,
     updateBotConfig,
     connectBot,
     disconnectBot,
+    simulateIncomingLeadAuto,
     sendChatMessage,
     sendImageAttachment,
     generatePdfProposal,
@@ -76,8 +83,9 @@ export const WhatsAppBotView: React.FC = () => {
     empresa,
   } = useApp();
 
-  type TabType = 'conversas' | 'tabela' | 'skills' | 'campanhas' | 'calculadora' | 'conexao' | 'config';
-  const [activeTab, setActiveTab] = useState<TabType>('conversas');
+  type TabType = 'conexao' | 'conversas' | 'radar' | 'tabela' | 'skills' | 'campanhas' | 'calculadora' | 'config';
+  // If not connected, default to 'conexao' (QR Code view), else 'conversas'
+  const [activeTab, setActiveTab] = useState<TabType>(botStatus === 'connected' ? 'conversas' : 'conexao');
 
   // Chat State
   const [chatInput, setChatInput] = useState('');
@@ -89,6 +97,10 @@ export const WhatsAppBotView: React.FC = () => {
   const [newClientName, setNewClientName] = useState('');
   const [newClientPhone, setNewClientPhone] = useState('');
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+
+  // QR Code Dynamic Refresh Timer
+  const [qrCountdown, setQrCountdown] = useState(45);
+  const [autoPilot, setAutoPilot] = useState(true);
 
   // Stone Modal State
   const [stoneModal, setStoneModal] = useState(false);
@@ -118,13 +130,20 @@ export const WhatsAppBotView: React.FC = () => {
   const [calcCooktop, setCalcCooktop] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedConversa = conversas.find((c) => c.id === selectedConversaId) || conversas[0];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedConversa?.mensagens]);
+
+  // QR Code Timer Effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setQrCountdown((prev) => (prev <= 1 ? 50 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Text-To-Speech (Voz do Robô)
   const speakText = (text: string, msgId: string) => {
@@ -257,7 +276,7 @@ export const WhatsAppBotView: React.FC = () => {
 
   return (
     <div className="w-full max-w-[1920px] mx-auto space-y-5 animate-fade-in pb-16">
-      {/* Top Banner Status with Super Bot Branding */}
+      {/* Top Banner Status with Super Bot Branding & Quick QR Action */}
       <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
@@ -300,7 +319,7 @@ export const WhatsAppBotView: React.FC = () => {
                 {botStatus === 'connected'
                   ? 'Super Robô Online (WhatsApp 24h)'
                   : botStatus === 'pairing'
-                  ? 'Aguardando Leitura QR Code...'
+                  ? 'Gerando QR Code do WhatsApp...'
                   : 'Celular Desconectado'}
               </span>
 
@@ -310,13 +329,22 @@ export const WhatsAppBotView: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
-              Super Inteligência Artificial Especialista em Marmoraria: Atendimento com leitura visual de plantas/fotos, cálculo instantâneo de m², geração de proposta timbrada com PIX, follow-up de 24h e conversão direta para o Kanban.
+              Super Robô de Atendimento WhatsApp para Marmorarias: Gera o QR Code, conecta o celular comercial e atende 24h no piloto automático.
             </p>
           </div>
         </div>
 
-        {/* Quick Top Switch Controls */}
+        {/* Quick Top Switch Controls & Auto-Pilot Trigger */}
         <div className="flex flex-wrap items-center gap-3 z-10">
+          <button
+            onClick={() => simulateIncomingLeadAuto()}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-yellow-200 text-zinc-950 font-black rounded-2xl text-xs shadow-lg shadow-amber-400/20 transition-all active:scale-95 cursor-pointer"
+            title="Simula a chegada de um lead no WhatsApp e o robô agindo na hora"
+          >
+            <Zap className="w-4 h-4 stroke-[2.5px] text-zinc-950" />
+            <span>Simular Lead Chamando Agora</span>
+          </button>
+
           <div className="flex items-center gap-2.5 bg-zinc-850/90 border border-zinc-750 rounded-2xl px-3.5 py-2">
             <span className="text-xs text-zinc-300 font-bold">Auto-Atendimento:</span>
             <button
@@ -332,28 +360,31 @@ export const WhatsAppBotView: React.FC = () => {
               />
             </button>
             <span className={`text-xs font-black ${botConfig.ativo ? 'text-emerald-400' : 'text-zinc-400'}`}>
-              {botConfig.ativo ? 'ATIVO' : 'PAUSADO'}
+              {botConfig.ativo ? 'LIGADO' : 'PAUSADO'}
             </span>
           </div>
 
           {botStatus === 'connected' ? (
             <button
-              onClick={disconnectBot}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-800 hover:bg-rose-500/20 text-zinc-300 hover:text-rose-400 border border-zinc-700 hover:border-rose-500/40 rounded-2xl text-xs font-bold transition-all cursor-pointer"
+              onClick={() => {
+                setActiveTab('conexao');
+                connectBot(false);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-750 text-amber-400 border border-amber-400/30 rounded-2xl text-xs font-black transition-all cursor-pointer"
             >
-              <Power className="w-4 h-4" />
-              <span>Desconectar</span>
+              <QrCode className="w-4 h-4" />
+              <span>Ver QR Code</span>
             </button>
           ) : (
             <button
               onClick={() => {
                 setActiveTab('conexao');
-                connectBot();
+                connectBot(false);
               }}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-black shadow-lg shadow-emerald-600/30 transition-all cursor-pointer active:scale-95"
             >
               <QrCode className="w-4 h-4" />
-              <span>Parear Celular via QR Code</span>
+              <span>Gerar QR Code Agora</span>
             </button>
           )}
         </div>
@@ -387,12 +418,12 @@ export const WhatsAppBotView: React.FC = () => {
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-md">
           <div>
-            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Catálogo de Pedras</span>
-            <div className="text-2xl font-black text-blue-400 mt-0.5">{botConfig.tabelaPedras.length} Pedras</div>
-            <span className="text-[10px] text-blue-300 font-semibold mt-0.5">Tabela Inteligente</span>
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Radar de Ações</span>
+            <div className="text-2xl font-black text-blue-400 mt-0.5">{botLogs.length} Ações</div>
+            <span className="text-[10px] text-blue-300 font-semibold mt-0.5">Tempo Real</span>
           </div>
           <div className="p-3 rounded-2xl bg-blue-500/15 text-blue-400 border border-blue-500/30">
-            <Layers className="w-6 h-6" />
+            <Activity className="w-6 h-6" />
           </div>
         </div>
 
@@ -408,16 +439,17 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs Navigation Bar (6 Power Modules) */}
+      {/* Tabs Navigation Bar (8 Power Modules) */}
       <div className="flex border-b border-zinc-800 gap-1.5 pb-2 overflow-x-auto">
         {[
-          { id: 'conversas', label: `Conversas WhatsApp (${conversas.length})`, icon: MessageSquare },
-          { id: 'tabela', label: `Tabela de Pedras (${botConfig.tabelaPedras.length})`, icon: Layers },
-          { id: 'skills', label: 'Super Poderes & Habilidades', icon: Zap },
-          { id: 'campanhas', label: 'Disparo em Massa & Campanhas', icon: Radio },
-          { id: 'calculadora', label: 'Calculadora de Orçamento m²', icon: Calculator },
-          { id: 'conexao', label: 'Conexão & QR Code', icon: QrCode },
-          { id: 'config', label: 'Configurações do Robô', icon: Sliders },
+          { id: 'conexao', label: '📱 Gerar QR Code & Conectar', icon: QrCode },
+          { id: 'conversas', label: `💬 Conversas WhatsApp (${conversas.length})`, icon: MessageSquare },
+          { id: 'radar', label: `⚡ Radar de Ações IA (${botLogs.length})`, icon: Activity },
+          { id: 'tabela', label: `💎 Tabela de Pedras (${botConfig.tabelaPedras.length})`, icon: Layers },
+          { id: 'skills', label: '🚀 Super Poderes IA', icon: Zap },
+          { id: 'campanhas', label: '📢 Disparo em Massa', icon: Radio },
+          { id: 'calculadora', label: '🧮 Calculadora de m²', icon: Calculator },
+          { id: 'config', label: '⚙️ Configurações', icon: Sliders },
         ].map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -438,7 +470,334 @@ export const WhatsAppBotView: React.FC = () => {
         })}
       </div>
 
-      {/* TAB 1: CENTRAL DE CONVERSAS AO VIVO E SIMULADOR */}
+      {/* TAB: CONEXÃO & GERADOR DE QR CODE */}
+      {activeTab === 'conexao' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
+          {/* Instructions Box */}
+          <div className="lg:col-span-6 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl flex flex-col justify-between">
+            <div className="space-y-5">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-2">
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Pareamento Multi-Aparelhos WhatsApp Web</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-amber-400">Como Parear seu Celular</h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Conecte o número de WhatsApp comercial da sua marmoraria. O robô passa a agir respondendo mensagens e fazendo orçamentos automaticamente 24h por dia.
+                </p>
+              </div>
+
+              <div className="space-y-3.5 text-xs text-zinc-300">
+                <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-zinc-850 border border-zinc-800">
+                  <div className="w-7 h-7 rounded-xl bg-amber-400 text-zinc-950 font-black flex items-center justify-center shrink-0">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="font-black text-zinc-100">Abra o WhatsApp no seu Celular</h4>
+                    <p className="text-zinc-400 mt-0.5">
+                      No Android: toque nos <strong>3 pontinhos</strong> no topo direito. No iPhone: toque em <strong>Configurações</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-zinc-850 border border-zinc-800">
+                  <div className="w-7 h-7 rounded-xl bg-amber-400 text-zinc-950 font-black flex items-center justify-center shrink-0">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="font-black text-zinc-100">Selecione "Aparelhos Conectados"</h4>
+                    <p className="text-zinc-400 mt-0.5">
+                      Toque no botão <strong>"Conectar um aparelho"</strong> para abrir o leitor de QR Code com a câmera do celular.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-zinc-850 border border-zinc-800">
+                  <div className="w-7 h-7 rounded-xl bg-amber-400 text-zinc-950 font-black flex items-center justify-center shrink-0">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="font-black text-zinc-100">Aponte a câmera para o QR Code ao lado</h4>
+                    <p className="text-zinc-400 mt-0.5">
+                      A sincronização é imediata e o robô passa a agir em todas as conversas novas de clientes!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-amber-400/10 border border-amber-400/30 rounded-2xl space-y-2">
+                <h4 className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Criptografia de Ponta a Ponta (E2EE)</span>
+                </h4>
+                <p className="text-[11px] text-zinc-300 leading-relaxed">
+                  Suas conversas e dados de clientes permanecem protegidos por criptografia direta entre o seu aparelho e a Inteligência Artificial da marmoraria.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Action Button to start or simulate */}
+            <div className="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => connectBot(true)}
+                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-emerald-600/30 transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="w-4 h-4 stroke-[2.5px]" />
+                <span>Validar Conexão & Deixar Robô Agir</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  simulateIncomingLeadAuto();
+                  setActiveTab('conversas');
+                }}
+                className="py-3.5 px-5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black text-xs rounded-2xl shadow transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Zap className="w-4 h-4 stroke-[2.5px]" />
+                <span>Simular Lead</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive QR Code Display */}
+          <div className="lg:col-span-6 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-5 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div>
+              <span className="text-xs font-black text-amber-400 uppercase tracking-wider block mb-1">
+                Leitor de QR Code WhatsApp Web
+              </span>
+              <h3 className="text-lg font-black text-zinc-100">
+                {botStatus === 'connected' ? '✅ Celular Conectado com Sucesso' : 'Escaneie para Conectar o WhatsApp'}
+              </h3>
+            </div>
+
+            {/* The QR Card with Laser Scanning Effect */}
+            <div className="p-6 bg-white rounded-3xl shadow-2xl border-4 border-amber-400 relative group overflow-hidden">
+              {/* Animated Laser Scanning Line */}
+              <div
+                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] z-20 pointer-events-none animate-bounce"
+                style={{ animationDuration: '2.5s' }}
+              />
+
+              <svg viewBox="0 0 200 200" className="w-60 h-60 sm:w-72 sm:h-72">
+                {/* 3 Corner Positioning Blocks */}
+                <rect x="10" y="10" width="50" height="50" fill="#000000" rx="6" />
+                <rect x="18" y="18" width="34" height="34" fill="#ffffff" rx="4" />
+                <rect x="26" y="26" width="18" height="18" fill="#000000" rx="2" />
+
+                <rect x="140" y="10" width="50" height="50" fill="#000000" rx="6" />
+                <rect x="148" y="18" width="34" height="34" fill="#ffffff" rx="4" />
+                <rect x="156" y="26" width="18" height="18" fill="#000000" rx="2" />
+
+                <rect x="10" y="140" width="50" height="50" fill="#000000" rx="6" />
+                <rect x="18" y="148" width="34" height="34" fill="#ffffff" rx="4" />
+                <rect x="26" y="156" width="18" height="18" fill="#000000" rx="2" />
+
+                {/* Pattern Matrix */}
+                <rect x="70" y="15" width="12" height="12" fill="#000000" />
+                <rect x="90" y="15" width="12" height="12" fill="#000000" />
+                <rect x="110" y="15" width="12" height="12" fill="#000000" />
+                <rect x="70" y="35" width="12" height="12" fill="#000000" />
+                <rect x="100" y="35" width="12" height="12" fill="#000000" />
+                <rect x="80" y="55" width="12" height="12" fill="#000000" />
+                <rect x="110" y="55" width="12" height="12" fill="#000000" />
+
+                <rect x="15" y="75" width="12" height="12" fill="#000000" />
+                <rect x="35" y="75" width="12" height="12" fill="#000000" />
+                <rect x="65" y="75" width="12" height="12" fill="#000000" />
+                <rect x="85" y="75" width="12" height="12" fill="#000000" />
+                <rect x="105" y="75" width="12" height="12" fill="#000000" />
+                <rect x="135" y="75" width="12" height="12" fill="#000000" />
+                <rect x="155" y="75" width="12" height="12" fill="#000000" />
+                <rect x="175" y="75" width="12" height="12" fill="#000000" />
+
+                <rect x="25" y="95" width="12" height="12" fill="#000000" />
+                <rect x="55" y="95" width="12" height="12" fill="#000000" />
+                <rect x="75" y="95" width="12" height="12" fill="#000000" />
+                <rect x="115" y="95" width="12" height="12" fill="#000000" />
+                <rect x="145" y="95" width="12" height="12" fill="#000000" />
+                <rect x="165" y="95" width="12" height="12" fill="#000000" />
+
+                <rect x="15" y="115" width="12" height="12" fill="#000000" />
+                <rect x="45" y="115" width="12" height="12" fill="#000000" />
+                <rect x="85" y="115" width="12" height="12" fill="#000000" />
+                <rect x="105" y="115" width="12" height="12" fill="#000000" />
+                <rect x="135" y="115" width="12" height="12" fill="#000000" />
+                <rect x="175" y="115" width="12" height="12" fill="#000000" />
+
+                <rect x="70" y="145" width="12" height="12" fill="#000000" />
+                <rect x="90" y="145" width="12" height="12" fill="#000000" />
+                <rect x="120" y="145" width="12" height="12" fill="#000000" />
+                <rect x="150" y="145" width="12" height="12" fill="#000000" />
+                <rect x="170" y="145" width="12" height="12" fill="#000000" />
+
+                <rect x="70" y="170" width="12" height="12" fill="#000000" />
+                <rect x="100" y="170" width="12" height="12" fill="#000000" />
+                <rect x="130" y="170" width="12" height="12" fill="#000000" />
+                <rect x="160" y="170" width="12" height="12" fill="#000000" />
+
+                {/* Center WhatsApp Icon Badge */}
+                <circle cx="100" cy="100" r="18" fill="#25D366" />
+                <circle cx="100" cy="100" r="14" fill="#ffffff" />
+                <circle cx="100" cy="100" r="10" fill="#25D366" />
+              </svg>
+
+              {botStatus === 'pairing' && (
+                <div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xs rounded-2xl flex flex-col items-center justify-center p-4 z-30">
+                  <RefreshCw className="w-10 h-10 text-amber-400 animate-spin" />
+                  <span className="text-xs font-black text-zinc-100 mt-2">Sincronizando com o WhatsApp...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Countdown & Status */}
+            <div>
+              <div className="flex items-center justify-center gap-2">
+                <span className={`w-3 h-3 rounded-full ${botStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                <span className="text-xs sm:text-sm font-black text-zinc-200">
+                  {botStatus === 'connected'
+                    ? `Sessão Ativa: ${botConfig.telefoneConectado}`
+                    : 'Aguardando Leitura da Câmera'}
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 mt-1 font-mono">
+                QR Code atualiza automaticamente em <strong className="text-amber-400">{qrCountdown}s</strong>
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => connectBot(false)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black rounded-2xl text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Gerar Novo QR Code</span>
+              </button>
+
+              {botStatus === 'connected' && (
+                <button
+                  onClick={disconnectBot}
+                  className="px-5 py-2.5 bg-zinc-800 hover:bg-rose-500/20 text-rose-400 border border-zinc-700 hover:border-rose-500/30 rounded-2xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Desconectar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: RADAR EM TEMPO REAL: ROBÔ AGINDO NO WHATSAPP */}
+      {activeTab === 'radar' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
+          {/* Left: Live Terminal Log */}
+          <div className="lg:col-span-8 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500/10 text-blue-400 border border-blue-500/30 mb-2">
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>Feed de Execução em Tempo Real</span>
+                </div>
+                <h2 className="text-xl font-black text-amber-400">Radar de Ações Autônomas da IA</h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Acompanhe exatamente o que o robô está pensando, calculando e respondendo no WhatsApp.
+                </p>
+              </div>
+
+              <button
+                onClick={() => simulateIncomingLeadAuto()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black text-xs rounded-xl shadow transition-all active:scale-95 cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>+ Simular Lead</span>
+              </button>
+            </div>
+
+            {/* Logs Stream List */}
+            <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+              {botLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="p-3.5 bg-zinc-850/90 border border-zinc-800 rounded-2xl flex items-start gap-3 text-xs transition-all hover:border-zinc-700"
+                >
+                  <div className="p-2 rounded-xl bg-zinc-800 text-amber-400 shrink-0 mt-0.5">
+                    {log.tipo === 'leitura_msg' ? (
+                      <MessageSquare className="w-4 h-4" />
+                    ) : log.tipo === 'calculo_ia' ? (
+                      <Calculator className="w-4 h-4 text-blue-400" />
+                    ) : log.tipo === 'geracao_pdf' ? (
+                      <FileText className="w-4 h-4 text-emerald-400" />
+                    ) : log.tipo === 'conversao_kanban' ? (
+                      <Kanban className="w-4 h-4 text-purple-400" />
+                    ) : (
+                      <Activity className="w-4 h-4 text-amber-400" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-zinc-100">{log.clienteNome}</span>
+                      <span className="font-mono text-[11px] text-zinc-500">{log.timestamp}</span>
+                    </div>
+                    <p className="text-zinc-300 mt-1 leading-relaxed">{log.descricao}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Auto-Pilot Status & Insights */}
+          <div className="lg:col-span-4 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl flex flex-col justify-between">
+            <div className="space-y-4">
+              <span className="text-xs font-black text-amber-400 uppercase tracking-wider block">
+                Piloto Automático do WhatsApp
+              </span>
+
+              <div className="p-4 bg-zinc-850 rounded-2xl border border-zinc-800 space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-300 font-bold">Status do Motor IA:</span>
+                  <span className="text-emerald-400 font-black flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Ativo 24 Horas
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-300 font-bold">Tempo Médio de Resposta:</span>
+                  <span className="text-zinc-100 font-mono font-black">&lt; 2.1 segundos</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-300 font-bold">Taxa de Conversão:</span>
+                  <span className="text-amber-400 font-black">94.8%</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-xs text-emerald-300 space-y-1">
+                <span className="font-bold block flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Inteligência Comercial em Ação</span>
+                </span>
+                <p className="text-[11px] text-zinc-300 leading-relaxed">
+                  O robô detecta automaticamente quando o cliente tem pressa ou alto poder aquisitivo, priorizando materiais nobres como Quartzitos e Dekton.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('conversas')}
+              className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black text-xs rounded-2xl shadow-lg transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Ver Conversas ao Vivo no Chat</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CENTRAL DE CONVERSAS AO VIVO E SIMULADOR */}
       {activeTab === 'conversas' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[660px]">
           {/* Col 1: Lista de Conversas (4 cols) */}
@@ -934,9 +1293,9 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: TABELA DE PEDRAS & BASE DE CONHECIMENTO DA IA */}
+      {/* TAB: TABELA DE PEDRAS & BASE DE CONHECIMENTO DA IA */}
       {activeTab === 'tabela' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fade-in">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500/10 text-blue-400 border border-blue-500/30 mb-2">
@@ -1025,9 +1384,9 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: SUPER PODERES & HABILIDADES DO ROBÔ */}
+      {/* TAB: SUPER PODERES & HABILIDADES DO ROBÔ */}
       {activeTab === 'skills' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fade-in">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-2">
               <Zap className="w-3.5 h-3.5" />
@@ -1091,9 +1450,9 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 4: DISPARO EM MASSA & CAMPANHAS */}
+      {/* TAB: DISPARO EM MASSA & CAMPANHAS */}
       {activeTab === 'campanhas' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
           <div className="lg:col-span-7 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-2">
@@ -1215,9 +1574,9 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 5: CALCULADORA DE ORÇAMENTO RÁPIDO */}
+      {/* TAB: CALCULADORA DE ORÇAMENTO RÁPIDO */}
       {activeTab === 'calculadora' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
           <div className="lg:col-span-7 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-2">
@@ -1416,174 +1775,9 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 6: CONEXÃO & PAREAMENTO QR CODE */}
-      {activeTab === 'conexao' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-2">
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Pareamento Multi-Aparelhos WhatsApp Web</span>
-              </div>
-              <h2 className="text-xl font-black text-amber-400">Como conectar o WhatsApp do seu Celular</h2>
-              <p className="text-xs text-zinc-400 mt-1">
-                Conecte o número de WhatsApp comercial da sua marmoraria para que o Super Robô responda seus clientes automaticamente.
-              </p>
-            </div>
-
-            <div className="space-y-4 text-xs text-zinc-300">
-              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-zinc-850 border border-zinc-800">
-                <div className="w-7 h-7 rounded-xl bg-amber-400 text-zinc-950 font-black flex items-center justify-center shrink-0">
-                  1
-                </div>
-                <div>
-                  <h4 className="font-black text-zinc-100">Abra o WhatsApp no seu Celular</h4>
-                  <p className="text-zinc-400 mt-0.5">
-                    No Android: toque nos <strong>3 pontinhos</strong> no canto superior direito. No iPhone: toque em <strong>Configurações</strong>.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-zinc-850 border border-zinc-800">
-                <div className="w-7 h-7 rounded-xl bg-amber-400 text-zinc-950 font-black flex items-center justify-center shrink-0">
-                  2
-                </div>
-                <div>
-                  <h4 className="font-black text-zinc-100">Selecione "Aparelhos Conectados"</h4>
-                  <p className="text-zinc-400 mt-0.5">
-                    Toque no botão <strong>"Conectar um aparelho"</strong> para abrir a câmera leitora de QR Code.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-zinc-850 border border-zinc-800">
-                <div className="w-7 h-7 rounded-xl bg-amber-400 text-zinc-950 font-black flex items-center justify-center shrink-0">
-                  3
-                </div>
-                <div>
-                  <h4 className="font-black text-zinc-100">Aponte a câmera para o QR Code ao lado</h4>
-                  <p className="text-zinc-400 mt-0.5">
-                    O sistema sincroniza imediatamente com suas conversas e o Super Robô passa a atender clientes 24 horas por dia!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-amber-400/10 border border-amber-400/30 rounded-2xl space-y-2">
-              <h4 className="text-xs font-black text-amber-400 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Segurança e Criptografia Total</span>
-              </h4>
-              <p className="text-[11px] text-zinc-300 leading-relaxed">
-                Suas conversas permanecem protegidas por criptografia. O robô apenas lê novas mensagens enviadas para o seu número comercial e responde orçamentos com base nas tabelas da sua empresa.
-              </p>
-            </div>
-          </div>
-
-          {/* QR Code Box */}
-          <div className="lg:col-span-5 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-4 shadow-xl">
-            <div className="p-5 bg-white rounded-3xl shadow-2xl border-4 border-amber-400 relative group">
-              <svg viewBox="0 0 200 200" className="w-56 h-56">
-                <rect x="10" y="10" width="50" height="50" fill="#000000" rx="6" />
-                <rect x="18" y="18" width="34" height="34" fill="#ffffff" rx="4" />
-                <rect x="26" y="26" width="18" height="18" fill="#000000" rx="2" />
-
-                <rect x="140" y="10" width="50" height="50" fill="#000000" rx="6" />
-                <rect x="148" y="18" width="34" height="34" fill="#ffffff" rx="4" />
-                <rect x="156" y="26" width="18" height="18" fill="#000000" rx="2" />
-
-                <rect x="10" y="140" width="50" height="50" fill="#000000" rx="6" />
-                <rect x="18" y="148" width="34" height="34" fill="#ffffff" rx="4" />
-                <rect x="26" y="156" width="18" height="18" fill="#000000" rx="2" />
-
-                <rect x="70" y="15" width="12" height="12" fill="#000000" />
-                <rect x="90" y="15" width="12" height="12" fill="#000000" />
-                <rect x="110" y="15" width="12" height="12" fill="#000000" />
-                <rect x="70" y="35" width="12" height="12" fill="#000000" />
-                <rect x="100" y="35" width="12" height="12" fill="#000000" />
-                <rect x="80" y="55" width="12" height="12" fill="#000000" />
-                <rect x="110" y="55" width="12" height="12" fill="#000000" />
-
-                <rect x="15" y="75" width="12" height="12" fill="#000000" />
-                <rect x="35" y="75" width="12" height="12" fill="#000000" />
-                <rect x="65" y="75" width="12" height="12" fill="#000000" />
-                <rect x="85" y="75" width="12" height="12" fill="#000000" />
-                <rect x="105" y="75" width="12" height="12" fill="#000000" />
-                <rect x="135" y="75" width="12" height="12" fill="#000000" />
-                <rect x="155" y="75" width="12" height="12" fill="#000000" />
-                <rect x="175" y="75" width="12" height="12" fill="#000000" />
-
-                <rect x="25" y="95" width="12" height="12" fill="#000000" />
-                <rect x="55" y="95" width="12" height="12" fill="#000000" />
-                <rect x="75" y="95" width="12" height="12" fill="#000000" />
-                <rect x="115" y="95" width="12" height="12" fill="#000000" />
-                <rect x="145" y="95" width="12" height="12" fill="#000000" />
-                <rect x="165" y="95" width="12" height="12" fill="#000000" />
-
-                <rect x="15" y="115" width="12" height="12" fill="#000000" />
-                <rect x="45" y="115" width="12" height="12" fill="#000000" />
-                <rect x="85" y="115" width="12" height="12" fill="#000000" />
-                <rect x="105" y="115" width="12" height="12" fill="#000000" />
-                <rect x="135" y="115" width="12" height="12" fill="#000000" />
-                <rect x="175" y="115" width="12" height="12" fill="#000000" />
-
-                <rect x="70" y="145" width="12" height="12" fill="#000000" />
-                <rect x="90" y="145" width="12" height="12" fill="#000000" />
-                <rect x="120" y="145" width="12" height="12" fill="#000000" />
-                <rect x="150" y="145" width="12" height="12" fill="#000000" />
-                <rect x="170" y="145" width="12" height="12" fill="#000000" />
-
-                <rect x="70" y="170" width="12" height="12" fill="#000000" />
-                <rect x="100" y="170" width="12" height="12" fill="#000000" />
-                <rect x="130" y="170" width="12" height="12" fill="#000000" />
-                <rect x="160" y="170" width="12" height="12" fill="#000000" />
-              </svg>
-
-              {botStatus === 'pairing' && (
-                <div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xs rounded-2xl flex flex-col items-center justify-center p-4">
-                  <RefreshCw className="w-9 h-9 text-amber-400 animate-spin" />
-                  <span className="text-xs font-black text-zinc-100 mt-2">Conectando ao celular...</span>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${botStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                <span className="text-xs font-black text-zinc-200">
-                  {botStatus === 'connected'
-                    ? `Sessão Ativa: ${botConfig.telefoneConectado}`
-                    : 'Aguardando Leitura pelo WhatsApp'}
-                </span>
-              </div>
-              <p className="text-[11px] text-zinc-400 mt-1">O QR Code é atualizado automaticamente a cada 60s.</p>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                onClick={connectBot}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black rounded-2xl text-xs shadow-md transition-all active:scale-95 cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Atualizar QR Code</span>
-              </button>
-
-              {botStatus === 'connected' && (
-                <button
-                  onClick={disconnectBot}
-                  className="px-5 py-2.5 bg-zinc-800 hover:bg-rose-500/20 text-rose-400 border border-zinc-700 hover:border-rose-500/30 rounded-2xl text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Desconectar
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 7: CONFIGURAÇÕES DO ROBÔ */}
+      {/* TAB: CONFIGURAÇÕES DO ROBÔ */}
       {activeTab === 'config' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
           {/* General Bot Configs */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
             <div>
@@ -1627,7 +1821,7 @@ export const WhatsAppBotView: React.FC = () => {
                       className={`p-3 rounded-2xl border text-xs font-bold transition-all cursor-pointer text-center ${
                         botConfig.tomDeVoz === t.id
                           ? 'bg-amber-400 text-zinc-950 border-amber-400 shadow-md font-black'
-                          : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-750'
+                          : 'bg-zinc-800 text-zinc-300 border-zinc-750 hover:bg-zinc-750'
                       }`}
                     >
                       {t.label}
@@ -1931,7 +2125,7 @@ export const WhatsAppBotView: React.FC = () => {
                   value={newClientName}
                   onChange={(e) => setNewClientName(e.target.value)}
                   placeholder="Ex: Fernanda Lima (Arquiteta)"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-zinc-100 focus:border-amber-400 focus:outline-none font-bold"
+                  className="w-full bg-zinc-800 border border-zinc-750 rounded-xl p-3 text-zinc-100 focus:border-amber-400 focus:outline-none font-bold"
                 />
               </div>
 
@@ -1944,7 +2138,7 @@ export const WhatsAppBotView: React.FC = () => {
                   value={newClientPhone}
                   onChange={(e) => setNewClientPhone(e.target.value)}
                   placeholder="Ex: (11) 98888-7777"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-zinc-100 focus:border-amber-400 focus:outline-none font-mono"
+                  className="w-full bg-zinc-800 border border-zinc-750 rounded-xl p-3 text-zinc-100 focus:border-amber-400 focus:outline-none font-mono"
                 />
               </div>
 
