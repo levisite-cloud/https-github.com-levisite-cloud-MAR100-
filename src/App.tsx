@@ -6,21 +6,22 @@ import { KanbanView } from './components/KanbanView';
 import { AtendimentosListView } from './components/AtendimentosListView';
 import { NovoAtendimentoView } from './components/NovoAtendimentoView';
 import { ConfiguracoesView } from './components/ConfiguracoesView';
+import { WhatsAppBotView } from './components/WhatsAppBotView';
 import { AtendimentoDetailModal } from './components/AtendimentoDetailModal';
 import { WhatsAppModal } from './components/WhatsAppModal';
 import { ToastContainer } from './components/ToastContainer';
-import { LayoutDashboard, Kanban, FileText, PlusCircle, Settings } from 'lucide-react';
+import { LayoutDashboard, Kanban, FileText, PlusCircle, Settings, Bot } from 'lucide-react';
 
 const MobileBottomNav: React.FC = () => {
-  const { activeView, setActiveView, atendimentos, empresa } = useApp();
+  const { activeView, setActiveView, atendimentos, empresa, conversas } = useApp();
   const activeCount = atendimentos.filter((a) => a.status !== 'Concluído').length;
 
   const tabs = [
     { id: 'dashboard' as const, label: 'Início', icon: LayoutDashboard },
     { id: 'kanban' as const, label: 'Quadro', icon: Kanban, badge: activeCount },
     { id: 'novo' as const, label: 'Novo', icon: PlusCircle, isCenter: true },
+    { id: 'bot' as const, label: 'Robô IA', icon: Bot, badge: conversas.length },
     { id: 'atendimentos' as const, label: 'Clientes', icon: FileText, badge: atendimentos.length },
-    { id: 'config' as const, label: 'Ajustes', icon: Settings },
   ];
 
   return (
@@ -81,6 +82,7 @@ const MainContent: React.FC = () => {
       {activeView === 'kanban' && <KanbanView />}
       {activeView === 'atendimentos' && <AtendimentosListView />}
       {activeView === 'novo' && <NovoAtendimentoView />}
+      {activeView === 'bot' && <WhatsAppBotView />}
       {activeView === 'config' && <ConfiguracoesView />}
 
       {/* Global Modals */}

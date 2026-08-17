@@ -1,6 +1,6 @@
 {
   "name": "Marmoraria Gestão",
-  "description": "Sistema moderno de gestão de atendimentos, kanban de produção, orçamentos e pedidos para marmorarias.",
+  "description": "Sistema moderno de gestão de atendimentos, kanban de produção, orçamentos, pedidos e Super Robô WhatsApp com IA para marmorarias.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

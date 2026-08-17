@@ -10,10 +10,11 @@ import {
   Menu,
   X,
   Sparkles,
+  Bot,
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const { activeView, setActiveView, empresa, atendimentos, searchTerm, setSearchTerm } = useApp();
+  const { activeView, setActiveView, empresa, atendimentos, searchTerm, setSearchTerm, botStatus, conversas } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const activeOrdersCount = atendimentos.filter((a) => a.status !== 'Concluído').length;
@@ -22,6 +23,7 @@ export const Header: React.FC = () => {
     { id: 'dashboard' as const, label: 'Início', icon: LayoutDashboard },
     { id: 'kanban' as const, label: 'Quadro de Pedidos', icon: Kanban, badge: activeOrdersCount },
     { id: 'atendimentos' as const, label: 'Lista de Clientes', icon: FileText, badge: atendimentos.length },
+    { id: 'bot' as const, label: 'Robô WhatsApp', icon: Bot, isBot: true, badge: conversas.length },
     { id: 'config' as const, label: 'Ajustes', icon: Settings },
   ];
 
