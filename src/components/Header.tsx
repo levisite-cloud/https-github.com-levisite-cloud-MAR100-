@@ -27,8 +27,8 @@ export const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-zinc-900/95 border-b border-zinc-800/90 backdrop-blur-md shadow-lg shadow-black/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-3">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+        <div className="flex items-center justify-between h-16 gap-3 sm:gap-4">
           {/* Logo & Nome da Empresa */}
           <div
             className="flex items-center gap-3 cursor-pointer group shrink-0"

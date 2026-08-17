@@ -218,10 +218,10 @@ export const AtendimentoDetailModal: React.FC = () => {
   )}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-800 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className="bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-800 w-full max-w-[96vw] md:max-w-4xl lg:max-w-5xl max-h-[94vh] flex flex-col overflow-hidden my-auto">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-850 flex items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-zinc-800 bg-zinc-850 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-amber-400 text-zinc-950">
               #{String(atendimento.id).padStart(4, '0')}

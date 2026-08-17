@@ -116,7 +116,7 @@ export const KanbanView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in flex flex-col h-[calc(100vh-6.5rem)] pb-4">
+    <div className="space-y-4 animate-fade-in flex flex-col min-h-[calc(100vh-10rem)] md:h-[calc(100vh-7.5rem)] pb-4">
       {/* Kanban Header & Filter Bar */}
       <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
         <div>
@@ -130,7 +130,7 @@ export const KanbanView: React.FC = () => {
 
         {/* Filter Controls */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="relative min-w-[220px]">
+          <div className="relative flex-1 sm:flex-initial min-w-[200px] sm:min-w-[240px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
@@ -163,7 +163,7 @@ export const KanbanView: React.FC = () => {
 
           <button
             onClick={() => setActiveView('novo')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-zinc-950 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-xs font-black rounded-xl shadow-md shadow-amber-400/20 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-zinc-950 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-xs font-black rounded-xl shadow-md shadow-amber-400/20 transition-all cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4 stroke-[2.5px]" />
             <span>+ Novo Pedido</span>
@@ -172,8 +172,8 @@ export const KanbanView: React.FC = () => {
       </div>
 
       {/* Kanban Columns Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2">
-        <div className="flex gap-3.5 h-full min-w-max items-stretch">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2 scroll-smooth">
+        <div className="flex gap-3.5 h-full min-w-max items-stretch px-0.5">
           {STATUS_LIST.map((status) => {
             const columnCards = filteredAtendimentos.filter((a) => a.status === status);
             const cfg = STATUS_CONFIG[status];
@@ -186,7 +186,7 @@ export const KanbanView: React.FC = () => {
                 onDragOver={(e) => handleDragOver(e, status)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, status)}
-                className={`w-72 sm:w-80 flex flex-col rounded-2xl border bg-zinc-900/90 transition-all duration-150 ${
+                className={`w-[85vw] sm:w-72 md:w-80 lg:w-[300px] xl:w-[320px] 2xl:w-[340px] flex flex-col rounded-2xl border bg-zinc-900/90 transition-all duration-150 shrink-0 ${
                   isOver
                     ? 'border-amber-400 bg-zinc-900 ring-2 ring-amber-400/30'
                     : 'border-zinc-800/90'

@@ -76,7 +76,7 @@ const MainContent: React.FC = () => {
   const { activeView } = useApp();
 
   return (
-    <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-20 md:pb-8">
+    <main className="w-full max-w-[1920px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 pt-4 sm:pt-6 pb-24 md:pb-10 transition-all duration-200">
       {activeView === 'dashboard' && <DashboardView />}
       {activeView === 'kanban' && <KanbanView />}
       {activeView === 'atendimentos' && <AtendimentosListView />}

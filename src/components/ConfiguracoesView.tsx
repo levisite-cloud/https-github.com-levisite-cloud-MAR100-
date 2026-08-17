@@ -229,7 +229,7 @@ export const ConfiguracoesView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in pb-16">
+    <div className="w-full max-w-6xl xl:max-w-7xl mx-auto space-y-6 animate-fade-in pb-16">
       {/* Header */}
       <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
