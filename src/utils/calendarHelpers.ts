@@ -1,5 +1,4 @@
-﻿import { Atendimento, EmpresaConfig } from '../types';
-import { formatDate } from './formatters';
+import { Atendimento, EmpresaConfig } from '../types';
 
 export interface CalendarEventData {
   title: string;
@@ -67,10 +66,10 @@ export function generateGoogleCalendarUrl(
   empresa: EmpresaConfig,
   customType: 'visita' | 'instalacao' = 'visita'
 ): string {
-  const isInstalacao = customType === 'instalacao' || atendimento.status === 'InstalaÃ§Ã£o Agendada';
+  const isInstalacao = customType === 'instalacao' || atendimento.status === 'Instalação Agendada';
   const eventName = isInstalacao
-    ? `ðŸšš InstalaÃ§Ã£o de Marmoraria - ${atendimento.nome} (#${String(atendimento.id).padStart(4, '0')})`
-    : `ðŸ“ Visita TÃ©cnica / MediÃ§Ã£o - ${atendimento.nome} (#${String(atendimento.id).padStart(4, '0')})`;
+    ? `🚚 Instalação de Marmoraria - ${atendimento.nome} (#${String(atendimento.id).padStart(4, '0')})`
+    : `📐 Visita Técnica / Medição - ${atendimento.nome} (#${String(atendimento.id).padStart(4, '0')})`;
 
   const dateToUse = isInstalacao && atendimento.dataInstalacao
     ? atendimento.dataInstalacao
@@ -82,22 +81,22 @@ export function generateGoogleCalendarUrl(
   const endStr = formatToGoogleCalendarDate(end);
 
   const details = [
-    isInstalacao ? 'ðŸšš INSTALAÃ‡ÃƒO DE MARMORARIA' : 'ðŸ“ VISITA TÃ‰CNICA / MEDIÃ‡ÃƒO',
-    'â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•',
-    `ðŸ‘¤ Cliente: ${atendimento.nome}`,
-    `ðŸ“ž Tel: ${atendimento.telefone}`,
-    atendimento.email ? `âœ‰ï¸ E-mail: ${atendimento.email}` : '',
-    `ðŸ› ï¸ ServiÃ§o: ${atendimento.servico}`,
-    `ðŸª¨ Material / Pedra: ${atendimento.material}`,
-    atendimento.acabamento ? `âœ¨ Acabamento: ${atendimento.acabamento}` : '',
-    `ðŸ“ EndereÃ§o: ${atendimento.endereco}`,
-    `ðŸ‘· ResponsÃ¡vel TÃ©cnico: ${atendimento.responsavel || 'Equipe da Marmoraria'}`,
-    atendimento.obs ? `ðŸ“ ObservaÃ§Ãµes: ${atendimento.obs}` : '',
+    isInstalacao ? '🚚 INSTALAÇÃO DE MARMORARIA' : '📐 VISITA TÉCNICA / MEDIÇÃO',
+    '═════════════════════════════════',
+    `👤 Cliente: ${atendimento.nome}`,
+    `📞 Tel: ${atendimento.telefone}`,
+    atendimento.email ? `✉️ E-mail: ${atendimento.email}` : '',
+    `🛠️ Serviço: ${atendimento.servico}`,
+    `🪨 Material / Pedra: ${atendimento.material}`,
+    atendimento.acabamento ? `✨ Acabamento: ${atendimento.acabamento}` : '',
+    `📍 Endereço: ${atendimento.endereco}`,
+    `👷 Responsável Técnico: ${atendimento.responsavel || 'Equipe da Marmoraria'}`,
+    atendimento.obs ? `📝 Observações: ${atendimento.obs}` : '',
     '',
-    `ðŸ¢ Empresa: ${empresa.nome || 'Marmoraria'}`,
-    empresa.whatsapp ? `ðŸ“± Tel Empresa: ${empresa.whatsapp}` : '',
-    'â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•',
-    'Agendado via Sistema de GestÃ£o de Marmoraria',
+    `🏢 Empresa: ${empresa.nome || 'Marmoraria'}`,
+    empresa.whatsapp ? `📱 Tel Empresa: ${empresa.whatsapp}` : '',
+    '═════════════════════════════════',
+    'Agendado via Sistema de Gestão de Marmoraria',
   ]
     .filter(Boolean)
     .join('\n');
@@ -121,7 +120,7 @@ export function downloadIcsCalendarFile(
   empresa: EmpresaConfig,
   customType: 'visita' | 'instalacao' = 'visita'
 ): void {
-  const isInstalacao = customType === 'instalacao' || atendimento.status === 'InstalaÃ§Ã£o Agendada';
+  const isInstalacao = customType === 'instalacao' || atendimento.status === 'Instalação Agendada';
   const summary = isInstalacao
     ? `Instalacao Marmoraria - ${atendimento.nome} (#${String(atendimento.id).padStart(4, '0')})`
     : `Visita Tecnica Medicao - ${atendimento.nome} (#${String(atendimento.id).padStart(4, '0')})`;

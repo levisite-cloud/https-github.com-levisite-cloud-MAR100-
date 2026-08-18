@@ -1,9 +1,8 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Sparkles,
   MapPin,
-  Phone,
   User,
   Calendar,
   Layers,
@@ -30,8 +29,8 @@ const SERVICOS_LIST: TipoServico[] = [
   'Bancada de Cozinha',
   'Bancada de Banheiro',
   'Ilha Gourmet',
-  'LavatÃ³rio Esculpido',
-  'Piso de MÃ¡rmore',
+  'Lavatório Esculpido',
+  'Piso de Mármore',
   'Piso de Granito',
   'Soleira',
   'Peitoril',
@@ -43,15 +42,15 @@ const SERVICOS_LIST: TipoServico[] = [
 ];
 
 const MATERIAIS_LIST: TipoMaterial[] = [
-  'Granito SÃ£o Gabriel',
+  'Granito São Gabriel',
   'Granito Preto Absoluto',
   'Granito Branco Siena',
   'Granito Ocre Itabira',
-  'MÃ¡rmore Travertino Nacional',
-  'MÃ¡rmore Travertino Romano',
-  'MÃ¡rmore Branco ParanÃ¡',
-  'MÃ¡rmore Nero Marquina',
-  'MÃ¡rmore Carrara',
+  'Mármore Travertino Nacional',
+  'Mármore Travertino Romano',
+  'Mármore Branco Paraná',
+  'Mármore Nero Marquina',
+  'Mármore Carrara',
   'Quartzo Branco Stellar',
   'Quartzo Calacatta',
   'Quartzo Preto Stellar',
@@ -63,46 +62,46 @@ const MATERIAIS_LIST: TipoMaterial[] = [
 
 const PRESETS = [
   {
-    label: 'ðŸ³ Bancada Cozinha (2.40x0.60m)',
+    label: '🍳 Bancada Cozinha (2.40x0.60m)',
     servico: 'Bancada de Cozinha' as TipoServico,
-    material: 'Granito SÃ£o Gabriel' as TipoMaterial,
+    material: 'Granito São Gabriel' as TipoMaterial,
     itens: [
       { id: '1', descricao: 'Bancada Cozinha 2.40m x 0.60m c/ rodopia', quantidade: 1, unidade: 'un' as const, valorUnit: 2400 },
       { id: '2', descricao: 'Recorte e colagem de cuba inox de embutir', quantidade: 1, unidade: 'un' as const, valorUnit: 350 },
-      { id: '3', descricao: 'FrontÃ£o h=10cm (4.00 metros lineares)', quantidade: 4, unidade: 'm' as const, valorUnit: 110 },
+      { id: '3', descricao: 'Frontão h=10cm (4.00 metros lineares)', quantidade: 4, unidade: 'm' as const, valorUnit: 110 },
     ],
   },
   {
-    label: 'ðŸ› LavatÃ³rio Cuba Esculpida',
-    servico: 'LavatÃ³rio Esculpido' as TipoServico,
-    material: 'MÃ¡rmore Travertino Nacional' as TipoMaterial,
+    label: '🛁 Lavatório Cuba Esculpida',
+    servico: 'Lavatório Esculpido' as TipoServico,
+    material: 'Mármore Travertino Nacional' as TipoMaterial,
     itens: [
-      { id: '1', descricao: 'LavatÃ³rio 1.20m x 0.50m c/ Cuba Esculpida em Rampa', quantidade: 1, unidade: 'un' as const, valorUnit: 3800 },
-      { id: '2', descricao: 'FrontÃ£o alto h=20cm e saia 15cm', quantidade: 2.4, unidade: 'm' as const, valorUnit: 220 },
+      { id: '1', descricao: 'Lavatório 1.20m x 0.50m c/ Cuba Esculpida em Rampa', quantidade: 1, unidade: 'un' as const, valorUnit: 3800 },
+      { id: '2', descricao: 'Frontão alto h=20cm e saia 15cm', quantidade: 2.4, unidade: 'm' as const, valorUnit: 220 },
     ],
   },
   {
-    label: 'âœ¨ Ilha Gourmet Quartzo',
+    label: '✨ Ilha Gourmet Quartzo',
     servico: 'Ilha Gourmet' as TipoServico,
     material: 'Quartzo Calacatta' as TipoMaterial,
     itens: [
-      { id: '1', descricao: 'Bancada Ilha Gourmet 2.60m x 1.00m cascata lateral 45Â°', quantidade: 1, unidade: 'un' as const, valorUnit: 9200 },
+      { id: '1', descricao: 'Bancada Ilha Gourmet 2.60m x 1.00m cascata lateral 45°', quantidade: 1, unidade: 'un' as const, valorUnit: 9200 },
       { id: '2', descricao: 'Recorte de Cooktop e Tomadas de embutir', quantidade: 2, unidade: 'un' as const, valorUnit: 350 },
     ],
   },
   {
-    label: 'ðŸšª Kit 8 Soleiras & Peitoris',
+    label: '🚪 Kit 8 Soleiras & Peitoris',
     servico: 'Soleira' as TipoServico,
     material: 'Granito Branco Siena' as TipoMaterial,
     itens: [
-      { id: '1', descricao: 'Soleiras padrÃ£o 0.80m x 0.15m polidas 4 lados', quantidade: 6, unidade: 'pÃ§' as const, valorUnit: 95 },
-      { id: '2', descricao: 'Peitoril de janela 1.20m x 0.20m com pingadeira', quantidade: 2, unidade: 'pÃ§' as const, valorUnit: 160 },
+      { id: '1', descricao: 'Soleiras padrão 0.80m x 0.15m polidas 4 lados', quantidade: 6, unidade: 'pç' as const, valorUnit: 95 },
+      { id: '2', descricao: 'Peitoril de janela 1.20m x 0.20m com pingadeira', quantidade: 2, unidade: 'pç' as const, valorUnit: 160 },
     ],
   },
 ];
 
 export const NovoAtendimentoView: React.FC = () => {
-  const { addAtendimento, setActiveView, setSelectedAtendimentoId, empresa, addToast } = useApp();
+  const { addAtendimento, setActiveView, setSelectedAtendimentoId, addToast } = useApp();
 
   // Estado do Formulário
   const [nome, setNome] = useState('');
@@ -122,8 +121,8 @@ export const NovoAtendimentoView: React.FC = () => {
 
   // Especificações do Projeto
   const [servico, setServico] = useState<string>('Bancada de Cozinha');
-  const [material, setMaterial] = useState<string>('Granito SÃ£o Gabriel');
-  const [acabamento, setAcabamento] = useState('Meia-esquadria 45Â°');
+  const [material, setMaterial] = useState<string>('Granito São Gabriel');
+  const [acabamento, setAcabamento] = useState('Meia-esquadria 45°');
   const [statusInicial, setStatusInicial] = useState<StatusAtendimento>('Novo Atendimento');
   const [prioridade, setPrioridade] = useState<PrioridadeAtendimento>('Normal');
   const [dataPrevista, setDataPrevista] = useState(
@@ -150,10 +149,10 @@ export const NovoAtendimentoView: React.FC = () => {
           if (!nome) setNome('Marmoraria Imperial Arte em Pedras');
           if (!telefone) setTelefone('(11) 98765-4321');
           if (!email) setEmail('contato@marmorariaimperial.com.br');
-          if (!logradouro) setLogradouro('Av. das NaÃ§Ãµes Unidas');
+          if (!logradouro) setLogradouro('Av. das Nações Unidas');
           if (!numero) setNumero('12901');
           if (!bairro) setBairro('Brooklin Paulista');
-          if (!cidade) setCidade('SÃ£o Paulo');
+          if (!cidade) setCidade('São Paulo');
           if (!estado) setEstado('SP');
           if (!cep) setCep('04578-000');
           setCepStatus('success');
@@ -269,9 +268,9 @@ export const NovoAtendimentoView: React.FC = () => {
     if (bairro) partes.push(bairro);
     if (cidade) partes.push(estado ? `${cidade}/${estado}` : cidade);
     if (cep) partes.push(`CEP ${cep}`);
-    const enderecoFormatado = partes.length > 0 ? partes.join(' â€” ') : 'EndereÃ§o nÃ£o informado';
+    const enderecoFormatado = partes.length > 0 ? partes.join(' — ') : 'Endereço não informado';
 
-    const newId = addAtendimento({
+    addAtendimento({
       nome: nome.trim(),
       telefone: telefone.trim(),
       email: email.trim() || undefined,
@@ -295,14 +294,13 @@ export const NovoAtendimentoView: React.FC = () => {
       orcamento: total > 0 ? formatMoeda(total) : '',
       desconto,
       validadeOrcamento: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      condicoesPagamento: '50% de entrada + saldo na entrega/instalaÃ§Ã£o',
+      condicoesPagamento: '50% de entrada + saldo na entrega/instalação',
       itensOrcamento: itens,
       obs: obs.trim() || undefined,
+    }).then((newId) => {
+      setSelectedAtendimentoId(newId);
+      setActiveView('kanban');
     });
-
-    // Abrir o item criado em detalhes ou redirecionar para o kanban
-    setSelectedAtendimentoId(newId);
-    setActiveView('kanban');
   };
 
   const handleReset = () => {
@@ -334,7 +332,7 @@ export const NovoAtendimentoView: React.FC = () => {
           </div>
           <h1 className="text-xl font-black text-amber-400">Cadastrar Novo Atendimento</h1>
           <p className="text-xs text-zinc-400">
-            Preencha os dados do cliente, endereÃ§o da obra, especificaÃ§Ãµes da pedra e monte o orÃ§amento.
+            Preencha os dados do cliente, endereço da obra, especificações da pedra e monte o orçamento.
           </p>
         </div>
 
@@ -342,7 +340,7 @@ export const NovoAtendimentoView: React.FC = () => {
           onClick={() => setActiveView('kanban')}
           className="text-xs font-bold text-zinc-300 hover:text-amber-400 px-3.5 py-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-750 transition-colors cursor-pointer"
         >
-          â† Voltar ao Kanban
+          ← Voltar ao Kanban
         </button>
       </div>
 
@@ -350,7 +348,7 @@ export const NovoAtendimentoView: React.FC = () => {
       <div className="bg-zinc-850 rounded-2xl p-4 border border-zinc-800 shadow-sm">
         <div className="text-xs font-bold text-zinc-300 mb-2.5 flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>Modelos RÃ¡pidos de OrÃ§amento (Clique para preencher):</span>
+          <span>Modelos Rápidos de Orçamento (Clique para preencher):</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((preset, idx) => (
@@ -438,14 +436,14 @@ export const NovoAtendimentoView: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. EndereÃ§o da Obra com Busca de CEP */}
+        {/* 2. Endereço da Obra com Busca de CEP */}
         <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
             <h2 className="text-sm font-black text-amber-400 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-amber-400" />
-              <span>2. EndereÃ§o do Local da Obra</span>
+              <span>2. Endereço do Local da Obra</span>
             </h2>
-            <span className="text-[11px] text-zinc-400">Busca automÃ¡tica via ViaCEP</span>
+            <span className="text-[11px] text-zinc-400">Busca automática via ViaCEP</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -474,7 +472,7 @@ export const NovoAtendimentoView: React.FC = () => {
                 </div>
               </div>
               {cepStatus === 'success' && (
-                <p className="text-[11px] text-emerald-400 font-semibold mt-1">EndereÃ§o localizado! âœ…</p>
+                <p className="text-[11px] text-emerald-400 font-semibold mt-1">Endereço localizado! ✅</p>
               )}
             </div>
 
@@ -493,7 +491,7 @@ export const NovoAtendimentoView: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1">NÃºmero *</label>
+              <label className="block text-xs font-bold text-zinc-300 mb-1">Número *</label>
               <input
                 type="text"
                 required
@@ -552,16 +550,16 @@ export const NovoAtendimentoView: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. EspecificaÃ§Ã£o do ServiÃ§o e Pedras */}
+        {/* 3. Especificação do Serviço e Pedras */}
         <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
           <h2 className="text-sm font-black text-amber-400 flex items-center gap-2 border-b border-zinc-800 pb-3">
             <Layers className="w-4 h-4 text-amber-400" />
-            <span>3. EspecificaÃ§Ãµes TÃ©cnicas & Pedras</span>
+            <span>3. Especificações Técnicas & Pedras</span>
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1">Tipo de ServiÃ§o *</label>
+              <label className="block text-xs font-bold text-zinc-300 mb-1">Tipo de Serviço *</label>
               <select
                 value={servico}
                 onChange={(e) => setServico(e.target.value)}
@@ -596,7 +594,7 @@ export const NovoAtendimentoView: React.FC = () => {
                 type="text"
                 value={acabamento}
                 onChange={(e) => setAcabamento(e.target.value)}
-                placeholder="Ex: Meia-esquadria 45Â°, 4cm"
+                placeholder="Ex: Meia-esquadria 45°, 4cm"
                 className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none"
               />
             </div>
@@ -625,10 +623,10 @@ export const NovoAtendimentoView: React.FC = () => {
                 onChange={(e) => setPrioridade(e.target.value as PrioridadeAtendimento)}
                 className="w-full text-xs bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-xl p-2.5 focus:border-amber-400 focus:outline-none font-semibold cursor-pointer"
               >
-                <option value="Baixa">ðŸŸ¢ Baixa</option>
-                <option value="Normal">ðŸ”µ Normal</option>
-                <option value="Alta">ðŸŸ¡ Alta</option>
-                <option value="Urgente">ðŸ”´ Urgente</option>
+                <option value="Baixa">🟢 Baixa</option>
+                <option value="Normal">🔵 Normal</option>
+                <option value="Alta">🟡 Alta</option>
+                <option value="Urgente">🔴 Urgente</option>
               </select>
             </div>
 
@@ -644,7 +642,7 @@ export const NovoAtendimentoView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1">HorÃ¡rio Previsto</label>
+              <label className="block text-xs font-bold text-zinc-300 mb-1">Horário Previsto</label>
               <input
                 type="time"
                 value={horaPrevista}
@@ -654,7 +652,7 @@ export const NovoAtendimentoView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1">ResponsÃ¡vel Inicial</label>
+              <label className="block text-xs font-bold text-zinc-300 mb-1">Responsável Inicial</label>
               <input
                 type="text"
                 value={responsavel}
@@ -666,15 +664,15 @@ export const NovoAtendimentoView: React.FC = () => {
           </div>
         </div>
 
-        {/* 4. DiscriminaÃ§Ã£o dos Itens do OrÃ§amento */}
+        {/* 4. Discriminação dos Itens do Orçamento */}
         <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
             <div>
               <h2 className="text-sm font-black text-amber-400 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-amber-400" />
-                <span>4. Itens & CÃ¡lculo do OrÃ§amento</span>
+                <span>4. Itens & Cálculo do Orçamento</span>
               </h2>
-              <p className="text-xs text-zinc-400">Discrimine as peÃ§as para gerar a proposta comercial e o PDF.</p>
+              <p className="text-xs text-zinc-400">Discrimine as peças para gerar a proposta comercial e o PDF.</p>
             </div>
             <button
               type="button"
@@ -691,7 +689,7 @@ export const NovoAtendimentoView: React.FC = () => {
               <thead>
                 <tr className="bg-zinc-850 text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-3 w-8">#</th>
-                  <th className="py-2.5 px-3">DescriÃ§Ã£o da PeÃ§a / ServiÃ§o</th>
+                  <th className="py-2.5 px-3">Descrição da Peça / Serviço</th>
                   <th className="py-2.5 px-3 w-20">Qtd</th>
                   <th className="py-2.5 px-3 w-20">Unidade</th>
                   <th className="py-2.5 px-3 w-28 text-right">Vlr. Unit (R$)</th>
@@ -703,7 +701,7 @@ export const NovoAtendimentoView: React.FC = () => {
                 {itens.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-zinc-500">
-                      Nenhum item adicionado. Clique em "+ Adicionar Item" ou use um dos Modelos RÃ¡pidos no topo.
+                      Nenhum item adicionado. Clique em "+ Adicionar Item" ou use um dos Modelos Rápidos no topo.
                     </td>
                   </tr>
                 ) : (
@@ -736,9 +734,9 @@ export const NovoAtendimentoView: React.FC = () => {
                           className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-1.5 py-1.5 text-xs text-zinc-200 focus:border-amber-400 focus:outline-none cursor-pointer"
                         >
                           <option value="un">un</option>
-                          <option value="mÂ²">mÂ²</option>
+                          <option value="m²">m²</option>
                           <option value="m">m (linear)</option>
-                          <option value="pÃ§">peÃ§a</option>
+                          <option value="pç">peça</option>
                         </select>
                       </td>
                       <td className="py-2 px-3 text-right">
@@ -791,21 +789,21 @@ export const NovoAtendimentoView: React.FC = () => {
                 Subtotal: <span className="font-semibold text-zinc-200">R$ {formatMoeda(subtotal)}</span>
               </div>
               <div className="text-sm font-bold text-zinc-300">
-                Total do OrÃ§amento: <span className="text-lg text-amber-400 font-black">R$ {formatMoeda(total)}</span>
+                Total do Orçamento: <span className="text-lg text-amber-400 font-black">R$ {formatMoeda(total)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 5. ObservaÃ§Ãµes e BotÃµes Finais */}
+        {/* 5. Observações e Botões Finais */}
         <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
           <label className="block text-xs font-bold text-zinc-300 mb-1">
-            ObservaÃ§Ãµes Gerais & Detalhes da Obra
+            Observações Gerais & Detalhes da Obra
           </label>
           <textarea
             value={obs}
             onChange={(e) => setObs(e.target.value)}
-            placeholder="InformaÃ§Ãµes adicionais sobre o serviÃ§o, acesso ao local da obra, prazos combinados..."
+            placeholder="Informações adicionais sobre o serviço, acesso ao local da obra, prazos combinados..."
             rows={3}
             className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none resize-none"
           />
@@ -817,14 +815,14 @@ export const NovoAtendimentoView: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Limpar FormulÃ¡rio</span>
+              <span>Limpar Formulário</span>
             </button>
             <button
               type="submit"
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 text-xs font-black rounded-xl shadow-md shadow-amber-400/20 transition-all active:scale-95 cursor-pointer"
             >
               <Save className="w-4 h-4 stroke-[2.5px]" />
-              <span>ðŸ’¾ Salvar Atendimento</span>
+              <span>Salvar Atendimento</span>
             </button>
           </div>
         </div>

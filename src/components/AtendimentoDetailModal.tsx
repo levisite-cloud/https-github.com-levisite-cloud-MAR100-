@@ -171,15 +171,6 @@ export const AtendimentoDetailModal: React.FC = () => {
     );
   };
 
-  const handleOpenWhatsAppScheduling = () => {
-    const current = getCurrentAtendimentoSnapshot();
-    const type = status === 'Instalação Agendada' ? 'instalacao' : 'visita';
-    setWhatsAppModalData({
-      atendimento: current,
-      type,
-    });
-  };
-
   const handleAdvanceStep = () => {
     const next = getNextStep(status);
     if (next) {
@@ -439,8 +430,8 @@ export const AtendimentoDetailModal: React.FC = () => {
               </span>
             </div>
 
-            {/* 3 Action Buttons for Calendar & WhatsApp */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+            {/* Action Buttons for Calendar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               <button
                 type="button"
                 onClick={handleOpenGoogleCalendar}
@@ -459,16 +450,6 @@ export const AtendimentoDetailModal: React.FC = () => {
               >
                 <Download className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
                 <span>2. Salvar no Computador (.ics)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOpenWhatsAppScheduling}
-                className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-emerald-600/20 group"
-                title="Envia confirmação de visita com o link do Google Agenda para o cliente no WhatsApp"
-              >
-                <MessageSquare className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
-                <span>3. WhatsApp do Cliente</span>
               </button>
             </div>
           </div>

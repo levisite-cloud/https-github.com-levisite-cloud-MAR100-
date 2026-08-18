@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   STATUS_LIST,
@@ -12,7 +12,6 @@ import {
 import { Atendimento, StatusAtendimento } from '../types';
 import {
   Calendar,
-  MessageSquare,
   Printer,
   ChevronRight,
   Search,
@@ -92,18 +91,8 @@ export const KanbanView: React.FC = () => {
     const next = getNextStep(atendimento.status);
     if (next) {
       updateAtendimentoStatus(atendimento.id, next);
-      addToast(`AvanÃ§ado para ${next}`, `${atendimento.nome}`, 'info');
+      addToast(`Avançado para ${next}`, `${atendimento.nome}`, 'info');
     }
-  };
-
-  const handleWhatsApp = (e: React.MouseEvent, atendimento: Atendimento) => {
-    e.stopPropagation();
-    let type: 'orcamento' | 'visita' | 'producao' | 'instalacao' | 'geral' = 'geral';
-    if (atendimento.status === 'Visita Agendada') type = 'visita';
-    else if (atendimento.status === 'OrÃ§amento Enviado') type = 'orcamento';
-    else if (atendimento.status === 'Em ProduÃ§Ã£o') type = 'producao';
-    else if (atendimento.status === 'InstalaÃ§Ã£o Agendada') type = 'instalacao';
-    setWhatsAppModalData({ atendimento, type });
   };
 
   const handlePrint = (e: React.MouseEvent, atendimento: Atendimento) => {
@@ -120,10 +109,10 @@ export const KanbanView: React.FC = () => {
       <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
         <div>
           <h1 className="text-base font-black text-amber-400 flex items-center gap-2">
-            <span>ðŸ“Œ Quadro de Pedidos por Etapa</span>
+            <span>📌 Quadro de Pedidos por Etapa</span>
           </h1>
           <p className="text-xs text-zinc-400">
-            Arraste os cartÃµes entre as colunas ou clique em <strong className="text-amber-400">"AvanÃ§ar"</strong> para atualizar o fluxo do pedido.
+            Arraste os cartões entre as colunas ou clique em <strong className="text-amber-400">"Avançar"</strong> para atualizar o fluxo do pedido.
           </p>
         </div>
 
@@ -133,7 +122,7 @@ export const KanbanView: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
-              placeholder="Buscar cliente, pedra, serviÃ§o..."
+              placeholder="Buscar cliente, pedra, serviço..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-amber-400 transition-colors"
@@ -143,7 +132,7 @@ export const KanbanView: React.FC = () => {
                 onClick={() => setLocalSearch('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-amber-400 font-bold p-1 cursor-pointer"
               >
-                âœ•
+                ✕
               </button>
             )}
           </div>
@@ -154,10 +143,10 @@ export const KanbanView: React.FC = () => {
             className="text-xs font-medium bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-xl px-3 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer"
           >
             <option value="">Todas as Prioridades</option>
-            <option value="Baixa">ðŸŸ¢ Baixa</option>
-            <option value="Normal">ðŸ”µ Normal</option>
-            <option value="Alta">ðŸŸ¡ Alta</option>
-            <option value="Urgente">ðŸ”´ Urgente</option>
+            <option value="Baixa">🟢 Baixa</option>
+            <option value="Normal">🔵 Normal</option>
+            <option value="Alta">🟡 Alta</option>
+            <option value="Urgente">🔴 Urgente</option>
           </select>
 
           <button
@@ -255,10 +244,10 @@ export const KanbanView: React.FC = () => {
                           {/* Service & Material */}
                           <div className="mt-1 space-y-0.5">
                             <div className="text-[11px] font-medium text-zinc-300 truncate">
-                              ðŸ› ï¸ {a.servico}
+                              🛠️ {a.servico}
                             </div>
                             <div className="text-[11px] font-bold text-amber-300 truncate">
-                              ðŸ’Ž {a.material}
+                              💎 {a.material}
                             </div>
                           </div>
 
@@ -268,7 +257,7 @@ export const KanbanView: React.FC = () => {
                               {a.orcamento ? (
                                 `R$ ${formatMoeda(a.orcamento)}`
                               ) : (
-                                <span className="text-zinc-500 font-normal italic">A orÃ§ar</span>
+                                <span className="text-zinc-500 font-normal italic">A orçar</span>
                               )}
                             </div>
                             <div className="text-zinc-400 font-medium flex items-center gap-1">
@@ -283,7 +272,6 @@ export const KanbanView: React.FC = () => {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center gap-1">
-                              
                               <button
                                 onClick={(e) => handlePrint(e, a)}
                                 className="p-1 rounded bg-zinc-800 text-zinc-300 hover:text-amber-400 border border-zinc-700 hover:bg-zinc-700 transition-colors cursor-pointer"
@@ -299,7 +287,7 @@ export const KanbanView: React.FC = () => {
                                 className="inline-flex items-center gap-1 text-[10px] font-black text-zinc-950 bg-amber-400 hover:bg-amber-300 px-2.5 py-0.5 rounded transition-all cursor-pointer"
                                 title={`Mover para ${next}`}
                               >
-                                <span>AvanÃ§ar</span>
+                                <span>Avançar</span>
                                 <ChevronRight className="w-3 h-3 stroke-[2.5px]" />
                               </button>
                             )}

@@ -129,16 +129,6 @@ export const AtendimentosListView: React.FC = () => {
     }
   };
 
-  const handleWhatsApp = (e: React.MouseEvent, atendimento: Atendimento) => {
-    e.stopPropagation();
-    let type: 'orcamento' | 'visita' | 'producao' | 'instalacao' | 'geral' = 'geral';
-    if (atendimento.status === 'Visita Agendada') type = 'visita';
-    else if (atendimento.status === 'Orçamento Enviado') type = 'orcamento';
-    else if (atendimento.status === 'Em Produção') type = 'producao';
-    else if (atendimento.status === 'Instalação Agendada') type = 'instalacao';
-    setWhatsAppModalData({ atendimento, type });
-  };
-
   const handleDelete = (e: React.MouseEvent, atendimento: Atendimento) => {
     e.stopPropagation();
     if (window.confirm(`Deseja excluir o atendimento de ${atendimento.nome}?`)) {

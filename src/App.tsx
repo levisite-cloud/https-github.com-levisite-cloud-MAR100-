@@ -7,7 +7,6 @@ import { AtendimentosListView } from './components/AtendimentosListView';
 import { NovoAtendimentoView } from './components/NovoAtendimentoView';
 import { ConfiguracoesView } from './components/ConfiguracoesView';
 import { AtendimentoDetailModal } from './components/AtendimentoDetailModal';
-import { WhatsAppModal } from './components/WhatsAppModal';
 import { ToastContainer } from './components/ToastContainer';
 import { LayoutDashboard, Kanban, FileText, PlusCircle, Settings } from 'lucide-react';
 
@@ -85,7 +84,6 @@ const MainContent: React.FC = () => {
 
       {/* Global Modals */}
       <AtendimentoDetailModal />
-      <WhatsAppModal />
       <ToastContainer />
     </main>
   );
