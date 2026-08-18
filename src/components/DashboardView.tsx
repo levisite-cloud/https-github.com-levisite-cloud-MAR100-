@@ -355,7 +355,7 @@ export const DashboardView: React.FC = () => {
             <thead>
               <tr className="bg-zinc-800/80 text-zinc-400 font-bold uppercase tracking-wider text-[10px] border-b border-zinc-800">
                 <th className="py-3 px-4"># ID</th>
-                <th className="py-3 px-4">Cliente / WhatsApp</th>
+                <th className="py-3 px-4">Cliente</th>
                 <th className="py-3 px-4">Serviço & Pedra</th>
                 <th className="py-3 px-4">Etapa Atual</th>
                 <th className="py-3 px-4">Prazo</th>
@@ -410,7 +410,7 @@ export const DashboardView: React.FC = () => {
                             title="Enviar WhatsApp"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
-                            <span>WhatsApp</span>
+                            
                           </button>
                           <button
                             onClick={(e) => handlePrint(e, a)}
@@ -476,7 +476,7 @@ export const DashboardView: React.FC = () => {
                       className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold text-xs hover:bg-emerald-500/25 cursor-pointer"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
-                      <span>WhatsApp</span>
+                      
                     </button>
                     <button
                       onClick={(e) => handlePrint(e, a)}

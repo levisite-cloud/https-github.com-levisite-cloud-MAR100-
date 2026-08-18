@@ -401,7 +401,7 @@ export const AtendimentoDetailModal: React.FC = () => {
             </div>
           </div>
 
-          {/* ═════════ AGENDAMENTO DE VISITA & CALENDÁRIO (GOOGLE + PC + WHATSAPP) ═════════ */}
+          {/* ═════════ AGENDAMENTO DE VISITA & CALENDÁRIO (GOOGLE + PC) ═════════ */}
           <div className="p-4 rounded-xl border border-amber-400/30 bg-gradient-to-r from-zinc-850 to-zinc-900 shadow-md space-y-3">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
               <div className="flex items-center gap-2">
