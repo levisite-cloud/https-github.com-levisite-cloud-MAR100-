@@ -61,7 +61,7 @@ export const DashboardView: React.FC = () => {
     .sort((a, b) => new Date(a.dataPrevista).getTime() - new Date(b.dataPrevista).getTime())
     .slice(0, 4);
 
-  // Filter for table
+  // Filtro para tabela
   const filteredRecentes = atendimentos.filter((a) => {
     if (tableFilter === 'andamento') return a.status !== 'Concluído';
     if (tableFilter === 'producao') return a.status === 'Em Produção' || a.status === 'Instalação Agendada';

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   Atendimento,
   BotAcaoLog,
@@ -52,7 +52,7 @@ interface AppContextType {
   importData: (jsonStr: string) => boolean;
   exportData: () => string;
 
-  // Bot WhatsApp State & Methods
+  // Estado e Métodos do Bot WhatsApp
   botStatus: BotConnectionStatus;
   botConfig: BotConfig;
   conversas: ConversaWhatsApp[];
@@ -92,7 +92,7 @@ const STORAGE_BOT_CONVERSAS_KEY = 'marmoraria_bot_conversas_v1';
 const STORAGE_BOT_STATUS_KEY = 'marmoraria_bot_status_v1';
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // 1. Initial Load from LocalStorage
+  // 1. Carregamento inicial do LocalStorage
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_ATENDIMENTOS_KEY);
@@ -117,7 +117,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   });
 
-  // Bot WhatsApp State
+  // Estado do Bot WhatsApp
   const [botConfig, setBotConfig] = useState<BotConfig>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_BOT_CONFIG_KEY);
@@ -166,7 +166,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [statusFilter, setStatusFilter] = useState('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // 2. Persistent Storage Sync
+  // 2. Sincronização do Armazenamento Persistente
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_ATENDIMENTOS_KEY, JSON.stringify(atendimentos));
@@ -179,7 +179,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       localStorage.setItem(STORAGE_EMPRESA_KEY, JSON.stringify(empresa));
     } catch (e) {
-      console.warn('Erro ao persistir configurações da empresa:', e);
+      console.warn('Erro ao persistir configuraÃ§Ãµes da empresa:', e);
     }
   }, [empresa]);
 
@@ -207,7 +207,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [botStatus]);
 
-  // Toast Helpers
+  // Auxiliares de Toast
   const addToast = (title: string, message?: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 4);
     setToasts((prev) => [...prev, { id, title, message, type }]);
@@ -221,7 +221,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // CRUD Operations for Atendimentos
+  // Operações CRUD para Atendimentos
   const addAtendimento = (data: Omit<Atendimento, 'id' | 'criadoEm'>): number => {
     const nextId = atendimentos.length > 0 ? Math.max(...atendimentos.map((a) => a.id)) + 1 : 1;
     const newAtendimento: Atendimento = {
@@ -239,7 +239,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         origin: { y: 0.6 },
       });
     } catch {
-      // confetti non-blocking
+      // confetti sem bloqueio
     }
 
     addToast('Atendimento Registrado', `Novo pedido #${nextId} cadastrado com sucesso!`, 'success');
@@ -260,7 +260,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return a;
       })
     );
-    addToast('Atendimento Atualizado', 'As alterações foram salvas com sucesso.', 'success');
+    addToast('Atendimento Atualizado', 'As alteraÃ§Ãµes foram salvas com sucesso.', 'success');
   };
 
   const updateAtendimentoStatus = (id: number, newStatus: StatusAtendimento) => {
@@ -277,7 +277,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       })
     );
 
-    if (newStatus === 'Concluído' || newStatus === 'Aprovado') {
+    if (newStatus === 'ConcluÃ­do' || newStatus === 'Aprovado') {
       try {
         confetti({
           particleCount: 50,
@@ -285,7 +285,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           origin: { y: 0.8 },
         });
       } catch {
-        // ignore
+        // ignorar
       }
     }
 
@@ -298,12 +298,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (selectedAtendimentoId === id) {
       setSelectedAtendimentoId(null);
     }
-    addToast('Atendimento Excluído', `Registro de ${target?.nome || '#' + id} removido.`, 'warning');
+    addToast('Atendimento ExcluÃ­do', `Registro de ${target?.nome || '#' + id} removido.`, 'warning');
   };
 
   const updateEmpresa = (updates: Partial<EmpresaConfig>) => {
     setEmpresa((prev) => ({ ...prev, ...updates }));
-    addToast('Configurações Salvas', 'Dados da empresa e layout atualizados!', 'success');
+    addToast('ConfiguraÃ§Ãµes Salvas', 'Dados da empresa e layout atualizados!', 'success');
   };
 
   const resetToDemoData = () => {
@@ -312,7 +312,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setConversas(INITIAL_CONVERSAS);
     setBotConfig(DEFAULT_BOT_CONFIG);
     setBotStatus('connected');
-    addToast('Dados Restaurados', 'Dados de demonstração recarregados.', 'info');
+    addToast('Dados Restaurados', 'Dados de demonstraÃ§Ã£o recarregados.', 'info');
   };
 
   const clearAllData = (resetEmpresa = false) => {
@@ -327,8 +327,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addToast(
       'Base de Dados Zerada',
       resetEmpresa
-        ? 'Todos os atendimentos foram excluídos e as configurações foram redefinidas.'
-        : 'Todos os atendimentos e orçamentos foram removidos com sucesso.',
+        ? 'Todos os atendimentos foram excluÃ­dos e as configuraÃ§Ãµes foram redefinidas.'
+        : 'Todos os atendimentos e orÃ§amentos foram removidos com sucesso.',
       'info'
     );
   };
@@ -352,10 +352,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (parsed.conversas && Array.isArray(parsed.conversas)) {
         setConversas(parsed.conversas);
       }
-      addToast('Importação Concluída', 'Dados restaurados com sucesso a partir do arquivo.', 'success');
+      addToast('ImportaÃ§Ã£o ConcluÃ­da', 'Dados restaurados com sucesso a partir do arquivo.', 'success');
       return true;
     } catch {
-      addToast('Erro na Importação', 'Arquivo JSON inválido ou corrompido.', 'error');
+      addToast('Erro na ImportaÃ§Ã£o', 'Arquivo JSON invÃ¡lido ou corrompido.', 'error');
       return false;
     }
   };
@@ -366,7 +366,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       timestamp: '14:50:02',
       clienteNome: 'Mariana Duarte',
       tipo: 'conexao_qr',
-      descricao: 'Sessão WhatsApp Multi-Device ativa com número comercial (11) 98765-4321.',
+      descricao: 'SessÃ£o WhatsApp Multi-Device ativa com nÃºmero comercial (11) 98765-4321.',
       status: 'concluido',
     },
     {
@@ -396,10 +396,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setBotLogs((prev) => [newLog, ...prev.slice(0, 19)]);
   };
 
-  // Bot Operations
+  // Operações do Bot
   const updateBotConfig = (updates: Partial<BotConfig>) => {
     setBotConfig((prev) => ({ ...prev, ...updates }));
-    addToast('Robô Atualizado', 'Configurações do WhatsApp Bot salvas!', 'success');
+    addToast('RobÃ´ Atualizado', 'ConfiguraÃ§Ãµes do WhatsApp Bot salvas!', 'success');
   };
 
   const connectBot = (instant: boolean = false) => {
@@ -414,7 +414,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addBotLog({
         clienteNome: 'Sistema',
         tipo: 'conexao_qr',
-        descricao: 'QR Code validado! Robô WhatsApp conectado e em modo autônomo 24h.',
+        descricao: 'QR Code validado! RobÃ´ WhatsApp conectado e em modo autÃ´nomo 24h.',
         status: 'concluido',
       });
       try {
@@ -424,7 +424,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           origin: { y: 0.6 },
         });
       } catch {}
-      addToast('WhatsApp Conectado!', 'Robô pronto para responder clientes 24h.', 'success');
+      addToast('WhatsApp Conectado!', 'RobÃ´ pronto para responder clientes 24h.', 'success');
       return;
     }
 
@@ -432,10 +432,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addBotLog({
       clienteNome: 'Sistema',
       tipo: 'conexao_qr',
-      descricao: 'Gerando QR Code dinâmico para pareamento com o celular...',
+      descricao: 'Gerando QR Code dinÃ¢mico para pareamento com o celular...',
       status: 'executando',
     });
-    addToast('Gerando QR Code', 'Aponte a câmera do WhatsApp para conectar...', 'info');
+    addToast('Gerando QR Code', 'Aponte a cÃ¢mera do WhatsApp para conectar...', 'info');
 
     setTimeout(() => {
       setBotStatus('connected');
@@ -448,7 +448,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addBotLog({
         clienteNome: 'Sistema',
         tipo: 'conexao_qr',
-        descricao: 'QR Code lido com sucesso! Robô ativo e respondendo em tempo real.',
+        descricao: 'QR Code lido com sucesso! RobÃ´ ativo e respondendo em tempo real.',
         status: 'concluido',
       });
       try {
@@ -458,7 +458,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           origin: { y: 0.6 },
         });
       } catch {}
-      addToast('WhatsApp Conectado!', 'Robô pronto para responder clientes 24h.', 'success');
+      addToast('WhatsApp Conectado!', 'RobÃ´ pronto para responder clientes 24h.', 'success');
     }, 2200);
   };
 
@@ -467,38 +467,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addBotLog({
       clienteNome: 'Sistema',
       tipo: 'conexao_qr',
-      descricao: 'Sessão WhatsApp desconectada pelo operador.',
+      descricao: 'SessÃ£o WhatsApp desconectada pelo operador.',
       status: 'concluido',
     });
-    addToast('WhatsApp Desconectado', 'A sessão com o celular foi encerrada.', 'warning');
+    addToast('WhatsApp Desconectado', 'A sessÃ£o com o celular foi encerrada.', 'warning');
   };
 
-  // Autonomous Lead Simulator (Simula o robô agindo sozinho via WhatsApp)
+  // Autonomous Lead Simulator (Simula o robÃ´ agindo sozinho via WhatsApp)
   const simulateIncomingLeadAuto = async () => {
     const leadsExemplos = [
       {
         nome: 'Dra. Vanessa Martins',
         tel: '(11) 98877-2211',
-        origem: 'WhatsApp Orgânico' as const,
-        msg: 'Olá, boa tarde! Gostaria de um orçamento para ilha e bancada de cozinha em Granito Preto São Gabriel de 3,20m x 0,90m com cooktop e cuba inox.',
+        origem: 'WhatsApp OrgÃ¢nico' as const,
+        msg: 'OlÃ¡, boa tarde! Gostaria de um orÃ§amento para ilha e bancada de cozinha em Granito Preto SÃ£o Gabriel de 3,20m x 0,90m com cooktop e cuba inox.',
       },
       {
         nome: 'Arq. Lucas Albuquerque',
         tel: '(11) 97766-3322',
-        origem: 'Indicação Arquiteto' as const,
-        msg: 'Boa tarde! Preciso cotar lavatório de suíte master com cuba esculpida em Mármore Branco Paraná de 1,60m x 0,55m. Vocês fazem medição no local?',
+        origem: 'IndicaÃ§Ã£o Arquiteto' as const,
+        msg: 'Boa tarde! Preciso cotar lavatÃ³rio de suÃ­te master com cuba esculpida em MÃ¡rmore Branco ParanÃ¡ de 1,60m x 0,55m. VocÃªs fazem mediÃ§Ã£o no local?',
       },
       {
         nome: 'Eng. Roberto Construtora',
         tel: '(11) 96655-4433',
         origem: 'Google' as const,
-        msg: 'Olá! Temos um projeto para 4 bancadas em Quartzo Branco Stellar. Qual o valor aproximado do m² com instalação inclusa?',
+        msg: 'OlÃ¡! Temos um projeto para 4 bancadas em Quartzo Branco Stellar. Qual o valor aproximado do mÂ² com instalaÃ§Ã£o inclusa?',
       },
       {
         nome: 'Juliana Costa (Reforma)',
         tel: '(11) 95544-3322',
         origem: 'Instagram Ads' as const,
-        msg: 'Olá! Estou reformando meu apartamento e quero trocar a pia da cozinha por Dekton ou Quartzito. Vocês têm mostruário e parcelam no cartão?',
+        msg: 'OlÃ¡! Estou reformando meu apartamento e quero trocar a pia da cozinha por Dekton ou Quartzito. VocÃªs tÃªm mostruÃ¡rio e parcelam no cartÃ£o?',
       },
     ];
 
@@ -508,13 +508,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addBotLog({
       clienteNome: aleatorio.nome,
       tipo: 'leitura_msg',
-      descricao: `📩 Nova mensagem de ${aleatorio.nome}: "${aleatorio.msg.slice(0, 50)}..."`,
+      descricao: `ðŸ“© Nova mensagem de ${aleatorio.nome}: "${aleatorio.msg.slice(0, 50)}..."`,
       status: 'concluido',
     });
 
-    addToast('Novo Lead no WhatsApp', `${aleatorio.nome} enviou uma mensagem pedindo orçamento!`, 'info');
+    addToast('Novo Lead no WhatsApp', `${aleatorio.nome} enviou uma mensagem pedindo orÃ§amento!`, 'info');
 
-    // Simulate client sending message and bot replying
+    // Simular cliente enviando mensagem e bot respondendo
     setTimeout(async () => {
       await sendChatMessage(newId, aleatorio.msg, 'cliente');
     }, 600);
@@ -526,7 +526,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: newId,
       clienteNome: nome || 'Cliente WhatsApp',
       clienteTelefone: telefone || '(11) 9' + Math.floor(10000000 + Math.random() * 90000000),
-      ultimaMensagem: 'Início do atendimento virtual',
+      ultimaMensagem: 'InÃ­cio do atendimento virtual',
       horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       mensagensNaoLidas: 0,
       statusLead: 'novo',
@@ -534,7 +534,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         {
           id: 'm-init',
           remetente: 'bot',
-          texto: botConfig.saudacao || 'Olá! Como posso te ajudar hoje?',
+          texto: botConfig.saudacao || 'OlÃ¡! Como posso te ajudar hoje?',
           horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           statusEnvio: 'entregue',
         },
@@ -551,7 +551,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (selectedConversaId === conversaId) {
       setSelectedConversaId(conversas.find((c) => c.id !== conversaId)?.id || null);
     }
-    addToast('Conversa Excluída', 'Histórico removido.', 'info');
+    addToast('Conversa ExcluÃ­da', 'HistÃ³rico removido.', 'info');
   };
 
   const sendChatMessage = async (
@@ -574,13 +574,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       anexo,
     };
 
-    // 1. Add user/operator message
+    // 1. Adicionar mensagem do usuário/operador
     setConversas((prev) =>
       prev.map((c) => {
         if (c.id === conversaId) {
           return {
             ...c,
-            ultimaMensagem: anexo?.type === 'image' ? '📷 [Foto enviada]' : anexo?.type === 'orcamento_pdf' ? '📄 [Proposta Comercial PDF]' : texto,
+            ultimaMensagem: anexo?.type === 'image' ? 'ðŸ“· [Foto enviada]' : anexo?.type === 'orcamento_pdf' ? 'ðŸ“„ [Proposta Comercial PDF]' : texto,
             horario: horaAtual,
             mensagens: [...c.mensagens, novaMsg],
           };
@@ -589,13 +589,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       })
     );
 
-    // 2. If message came from client and Bot is active, trigger AI / Bot response!
+    // 2. Se a mensagem veio do cliente e o Bot está ativo, disparar resposta da IA / Bot!
     if (remetente === 'cliente' && botConfig.ativo && botStatus === 'connected') {
       const conv = conversas.find((c) => c.id === conversaId);
       const historicoMsgs = conv ? [...conv.mensagens, novaMsg] : [novaMsg];
 
       try {
-        // Call backend server API
+        // Chamar API do servidor backend
         const response = await fetch('/api/bot/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -611,7 +611,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         if (response.ok) {
           const data = await response.json();
-          const respostaBot = data.resposta || 'Entendido! Já anotei suas informações.';
+          const respostaBot = data.resposta || 'Entendido! JÃ¡ anotei suas informaÃ§Ãµes.';
           const leadExtraido = data.leadExtraido;
 
           setTimeout(() => {
@@ -640,30 +640,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               })
             );
 
-            // Increment bot counter
+            // Incrementar contador do bot
             setBotConfig((prev) => ({ ...prev, totalAtendimentosBot: prev.totalAtendimentosBot + 1 }));
           }, 800);
         } else {
           throw new Error('Fallback to local engine');
         }
       } catch {
-        // Local intelligent heuristic engine for instant fallback
+        // Motor heurístico inteligente local para fallback instantâneo
         setTimeout(() => {
           let respostaBot = '';
           const lower = texto.toLowerCase();
 
-          if (lower.includes('preço') || lower.includes('quanto') || lower.includes('orçamento') || lower.includes('valor')) {
-            respostaBot = `Perfeito! Na ${empresa.nome || 'nossa marmoraria'}, os valores variam conforme o material e metragem:\n\n• Granito São Gabriel: ~R$ 850/m²\n• Granito Preto Absoluto: ~R$ 1.250/m²\n• Quartzo Calacatta Gold: ~R$ 2.400/m²\n• Mármore Travertino: ~R$ 980/m²\n• Quartzito Mont Blanc: ~R$ 2.800/m²\n\nQual a medida aproximada (comprimento x largura) do seu espaço?`;
+          if (lower.includes('preÃ§o') || lower.includes('quanto') || lower.includes('orÃ§amento') || lower.includes('valor')) {
+            respostaBot = `Perfeito! Na ${empresa.nome || 'nossa marmoraria'}, os valores variam conforme o material e metragem:\n\nâ€¢ Granito SÃ£o Gabriel: ~R$ 850/mÂ²\nâ€¢ Granito Preto Absoluto: ~R$ 1.250/mÂ²\nâ€¢ Quartzo Calacatta Gold: ~R$ 2.400/mÂ²\nâ€¢ MÃ¡rmore Travertino: ~R$ 980/mÂ²\nâ€¢ Quartzito Mont Blanc: ~R$ 2.800/mÂ²\n\nQual a medida aproximada (comprimento x largura) do seu espaÃ§o?`;
           } else if (lower.includes('bancada') || lower.includes('cozinha') || lower.includes('ilha')) {
-            respostaBot = `Ótima escolha! Para bancadas e ilhas de cozinha, os materiais mais resistentes a manchas e calor são os Granitos Pretos, Quartzos e Ultracompactos (Dekton). Você já tem o desenho ou as medidas em mãos?`;
-          } else if (lower.includes('banheiro') || lower.includes('lavatório') || lower.includes('cuba esculpida')) {
-            respostaBot = `Trabalhamos com lindos lavatórios com cuba esculpida em rampa ou fundo reto em Mármore Travertino, Quartzo e Branco Paraná. Qual o acabamento desejado?`;
-          } else if (lower.includes('visita') || lower.includes('medição') || lower.includes('medir') || lower.includes('agendar')) {
-            respostaBot = `Com certeza! Realizamos a visita técnica de medição no seu endereço sem compromisso. Qual o seu bairro e o melhor dia/horário para a equipe ir até você?`;
+            respostaBot = `Ã“tima escolha! Para bancadas e ilhas de cozinha, os materiais mais resistentes a manchas e calor sÃ£o os Granitos Pretos, Quartzos e Ultracompactos (Dekton). VocÃª jÃ¡ tem o desenho ou as medidas em mÃ£os?`;
+          } else if (lower.includes('banheiro') || lower.includes('lavatÃ³rio') || lower.includes('cuba esculpida')) {
+            respostaBot = `Trabalhamos com lindos lavatÃ³rios com cuba esculpida em rampa ou fundo reto em MÃ¡rmore Travertino, Quartzo e Branco ParanÃ¡. Qual o acabamento desejado?`;
+          } else if (lower.includes('visita') || lower.includes('mediÃ§Ã£o') || lower.includes('medir') || lower.includes('agendar')) {
+            respostaBot = `Com certeza! Realizamos a visita tÃ©cnica de mediÃ§Ã£o no seu endereÃ§o sem compromisso. Qual o seu bairro e o melhor dia/horÃ¡rio para a equipe ir atÃ© vocÃª?`;
           } else if (lower.includes('humano') || lower.includes('atendente') || lower.includes('vendedor') || lower.includes('falar')) {
-            respostaBot = `Com certeza! Já notifiquei nossa equipe de vendas. Em instantes um especialista continuará o atendimento por aqui.`;
+            respostaBot = `Com certeza! JÃ¡ notifiquei nossa equipe de vendas. Em instantes um especialista continuarÃ¡ o atendimento por aqui.`;
           } else {
-            respostaBot = `Entendi! Temos estoque de chapas nobres prontas para corte. Se desejar, me envie a foto do seu ambiente ou as medidas que já calculo uma prévia de orçamento para você! 😊`;
+            respostaBot = `Entendi! Temos estoque de chapas nobres prontas para corte. Se desejar, me envie a foto do seu ambiente ou as medidas que jÃ¡ calculo uma prÃ©via de orÃ§amento para vocÃª! ðŸ˜Š`;
           }
 
           const botMsg = {
@@ -699,7 +699,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const clienteMsg = {
       id: 'img-' + Date.now(),
       remetente: 'cliente' as const,
-      texto: 'Enviei uma foto do meu ambiente / planta para análise.',
+      texto: 'Enviei uma foto do meu ambiente / planta para anÃ¡lise.',
       horario: horaAtual,
       statusEnvio: 'lido' as const,
       anexo: {
@@ -715,7 +715,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (c.id === conversaId) {
           return {
             ...c,
-            ultimaMensagem: '📷 [Foto enviada pelo cliente]',
+            ultimaMensagem: 'ðŸ“· [Foto enviada pelo cliente]',
             horario: horaAtual,
             mensagens: [...c.mensagens, clienteMsg],
           };
@@ -724,7 +724,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       })
     );
 
-    // Call Vision endpoint
+    // Chamar endpoint de Visão
     try {
       const res = await fetch('/api/bot/analyze-image', {
         method: 'POST',
@@ -736,7 +736,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
 
       const data = await res.json();
-      const respostaAnalise = data.analise || '🔍 Analisei sua imagem! Identifiquei um espaço de bancada com medidas aproximadas de 2.20m x 0.60m. Qual acabamento você prefere?';
+      const respostaAnalise = data.analise || 'ðŸ” Analisei sua imagem! Identifiquei um espaÃ§o de bancada com medidas aproximadas de 2.20m x 0.60m. Qual acabamento vocÃª prefere?';
       const dados = data.dadosExtraidos;
 
       setTimeout(() => {
@@ -764,12 +764,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         );
       }, 1000);
     } catch {
-      // Fallback
+      // Fallback (resposta alternativa)
       setTimeout(() => {
         const botMsg = {
           id: 'bot-vision-fb-' + Date.now(),
           remetente: 'bot' as const,
-          texto: '🔍 Foto recebida com sucesso! Identifiquei o espaço de bancada. Recomendo Granito São Gabriel ou Quartzo Calacatta para esse ambiente. Gostaria de agendar a medição técnica gratuita?',
+          texto: 'ðŸ” Foto recebida com sucesso! Identifiquei o espaÃ§o de bancada. Recomendo Granito SÃ£o Gabriel ou Quartzo Calacatta para esse ambiente. Gostaria de agendar a mediÃ§Ã£o tÃ©cnica gratuita?',
           horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           statusEnvio: 'lido' as const,
         };
@@ -795,13 +795,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const conv = conversas.find((c) => c.id === conversaId);
     if (!conv) return;
 
-    const material = conv.dadosExtraidos?.material || 'Granito São Gabriel';
+    const material = conv.dadosExtraidos?.material || 'Granito SÃ£o Gabriel';
     const servico = conv.dadosExtraidos?.servico || 'Bancada de Cozinha';
     const medidas = conv.dadosExtraidos?.medidas || '2.20m x 0.60m';
     const valor = conv.dadosExtraidos?.valorEstimado || 2450;
     const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-    const textoProposta = `📄 *PROPOSTA COMERCIAL TIMBRADA GERADA!* 💎\n\nOlá, ${conv.clienteNome}! Segue sua proposta formal da *${empresa.nome}*:\n\n• *Projeto:* ${servico}\n• *Material Nobre:* ${material}\n• *Dimensões:* ${medidas}\n• *Valor Total:* R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n• *Condições:* 10x sem juros no cartão ou 5% no PIX\n• *Prazo de Instalação:* 7 a 10 dias úteis\n• *Garantia:* 5 Anos de Acabamento e Assentamento\n\nChave PIX da Empresa: ${empresa.pix || empresa.cnpj || 'marmoraria@pix.com.br'}`;
+    const textoProposta = `ðŸ“„ *PROPOSTA COMERCIAL TIMBRADA GERADA!* ðŸ’Ž\n\nOlÃ¡, ${conv.clienteNome}! Segue sua proposta formal da *${empresa.nome}*:\n\nâ€¢ *Projeto:* ${servico}\nâ€¢ *Material Nobre:* ${material}\nâ€¢ *DimensÃµes:* ${medidas}\nâ€¢ *Valor Total:* R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\nâ€¢ *CondiÃ§Ãµes:* 10x sem juros no cartÃ£o ou 5% no PIX\nâ€¢ *Prazo de InstalaÃ§Ã£o:* 7 a 10 dias Ãºteis\nâ€¢ *Garantia:* 5 Anos de Acabamento e Assentamento\n\nChave PIX da Empresa: ${empresa.pix || empresa.cnpj || 'marmoraria@pix.com.br'}`;
 
     const botMsg = {
       id: 'prop-pdf-' + Date.now(),
@@ -818,7 +818,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           servico,
           medidas,
           valor,
-          condicoes: '10x sem juros no cartão de crédito ou 5% de desconto no PIX à vista.',
+          condicoes: '10x sem juros no cartÃ£o de crÃ©dito ou 5% de desconto no PIX Ã  vista.',
         },
       },
     };
@@ -828,7 +828,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (c.id === conversaId) {
           return {
             ...c,
-            ultimaMensagem: '📄 [Proposta Comercial PDF Enviada]',
+            ultimaMensagem: 'ðŸ“„ [Proposta Comercial PDF Enviada]',
             horario: horaAtual,
             mensagens: [...c.mensagens, botMsg],
           };
@@ -845,7 +845,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!conv) return;
 
     const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const followUpMsg = `Olá, ${conv.clienteNome}! Tudo bem? 😊\n\nPassando para saber se você conseguiu analisar a nossa cotação para o seu projeto de *${conv.dadosExtraidos?.servico || 'Marmoraria'}* em *${conv.dadosExtraidos?.material || 'Pedra Nobre'}*.\n\nConsegui liberar com a gerência um bônus especial de *Cuba Inox Inclusa ou Frete Grátis* se fecharmos a medição nesta semana! Podemos confirmar?`;
+    const followUpMsg = `OlÃ¡, ${conv.clienteNome}! Tudo bem? ðŸ˜Š\n\nPassando para saber se vocÃª conseguiu analisar a nossa cotaÃ§Ã£o para o seu projeto de *${conv.dadosExtraidos?.servico || 'Marmoraria'}* em *${conv.dadosExtraidos?.material || 'Pedra Nobre'}*.\n\nConsegui liberar com a gerÃªncia um bÃ´nus especial de *Cuba Inox Inclusa ou Frete GrÃ¡tis* se fecharmos a mediÃ§Ã£o nesta semana! Podemos confirmar?`;
 
     const botMsg = {
       id: 'followup-' + Date.now(),
@@ -869,7 +869,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       })
     );
 
-    addToast('Follow-up Disparado!', `Mensagem de recuperação de venda enviada para ${conv.clienteNome}!`, 'info');
+    addToast('Follow-up Disparado!', `Mensagem de recuperaÃ§Ã£o de venda enviada para ${conv.clienteNome}!`, 'info');
   };
 
   const updateTabelaPedra = (pedraId: string, updates: Partial<any>) => {
@@ -877,7 +877,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...prev,
       tabelaPedras: prev.tabelaPedras.map((p) => (p.id === pedraId ? { ...p, ...updates } : p)),
     }));
-    addToast('Tabela de Pedras Atualizada', 'Preços e dados sincronizados com a IA do robô.', 'success');
+    addToast('Tabela de Pedras Atualizada', 'PreÃ§os e dados sincronizados com a IA do robÃ´.', 'success');
   };
 
   const addTabelaPedra = (pedra: any) => {
@@ -889,7 +889,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...prev,
       tabelaPedras: [novaPedra, ...prev.tabelaPedras],
     }));
-    addToast('Pedra Adicionada', `${pedra.nome} agora faz parte do catálogo da IA.`, 'success');
+    addToast('Pedra Adicionada', `${pedra.nome} agora faz parte do catÃ¡logo da IA.`, 'success');
   };
 
   const deleteTabelaPedra = (pedraId: string) => {
@@ -897,7 +897,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...prev,
       tabelaPedras: prev.tabelaPedras.filter((p) => p.id !== pedraId),
     }));
-    addToast('Pedra Removida', 'Item removido do catálogo de preços.', 'info');
+    addToast('Pedra Removida', 'Item removido do catÃ¡logo de preÃ§os.', 'info');
   };
 
   const toggleBotSkill = (skillId: string) => {
@@ -905,7 +905,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...prev,
       skills: prev.skills.map((s) => (s.id === skillId ? { ...s, ativo: !s.ativo } : s)),
     }));
-    addToast('Habilidade Atualizada', 'Configuração do Super Robô modificada com sucesso.', 'info');
+    addToast('Habilidade Atualizada', 'ConfiguraÃ§Ã£o do Super RobÃ´ modificada com sucesso.', 'info');
   };
 
   const dispararCampanha = (segmento: string, templateMsg: string): number => {
@@ -918,7 +918,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const textoPersonalizado = templateMsg
           .replace(/\{\{nome\}\}/g, c.clienteNome)
           .replace(/\{\{servico\}\}/g, c.dadosExtraidos?.servico || 'Bancada')
-          .replace(/\{\{material\}\}/g, c.dadosExtraidos?.material || 'Granito São Gabriel');
+          .replace(/\{\{material\}\}/g, c.dadosExtraidos?.material || 'Granito SÃ£o Gabriel');
 
         const broadcastMsg = {
           id: 'bcast-' + Date.now() + '-' + c.id,
@@ -946,9 +946,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!conv) return 0;
 
     const servico = conv.dadosExtraidos?.servico || 'Bancada de Cozinha';
-    const material = conv.dadosExtraidos?.material || 'Granito São Gabriel';
+    const material = conv.dadosExtraidos?.material || 'Granito SÃ£o Gabriel';
     const orcamentoEstimado = conv.dadosExtraidos?.valorEstimado ? conv.dadosExtraidos.valorEstimado.toFixed(2).replace('.', ',') : '2.500,00';
-    const endereco = conv.dadosExtraidos?.endereco || 'Endereço a confirmar via WhatsApp';
+    const endereco = conv.dadosExtraidos?.endereco || 'EndereÃ§o a confirmar via WhatsApp';
 
     const newId = addAtendimento({
       nome: conv.clienteNome,
@@ -958,14 +958,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       logradouro: endereco,
       numero: 'S/N',
       bairro: 'A confirmar',
-      cidade: 'São Paulo',
+      cidade: 'SÃ£o Paulo',
       estado: 'SP',
       servico,
       material,
       status: 'Novo Atendimento',
       prioridade: 'Alta',
       dataPrevista: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      responsavel: 'Robô WhatsApp (Auto-Lead)',
+      responsavel: 'RobÃ´ WhatsApp (Auto-Lead)',
       orcamento: orcamentoEstimado,
       itensOrcamento: [
         {
@@ -976,10 +976,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           valorUnit: conv.dadosExtraidos?.valorEstimado || 2500,
         },
       ],
-      obs: `Atendimento gerado automaticamente pelo MarmoBot WhatsApp.\nÚltima mensagem do cliente: "${conv.ultimaMensagem}"`,
+      obs: `Atendimento gerado automaticamente pelo MarmoBot WhatsApp.\nÃšltima mensagem do cliente: "${conv.ultimaMensagem}"`,
     });
 
-    // Mark conversation as converted
+    // Marcar conversa como convertida
     setConversas((prev) =>
       prev.map((c) => (c.id === conversaId ? { ...c, statusLead: 'cadastrado_kanban' } : c))
     );

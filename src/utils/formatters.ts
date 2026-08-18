@@ -113,7 +113,7 @@ export function formatMoeda(val: number | string | undefined | null): string {
   if (typeof val === 'number') {
     num = val;
   } else {
-    // If it's already in pt-BR formatted string like "1.500,00", normalize:
+    // Se já está em formato pt-BR como "1.500,00", normalizar:
     const clean = String(val).replace(/\./g, '').replace(',', '.');
     num = parseFloat(clean) || 0;
   }

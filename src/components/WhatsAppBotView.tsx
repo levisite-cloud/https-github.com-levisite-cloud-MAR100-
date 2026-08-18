@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Bot,
@@ -84,10 +84,10 @@ export const WhatsAppBotView: React.FC = () => {
   } = useApp();
 
   type TabType = 'conexao' | 'conversas' | 'radar' | 'tabela' | 'skills' | 'campanhas' | 'calculadora' | 'config';
-  // If not connected, default to 'conexao' (QR Code view), else 'conversas'
+  // Se não conectado, exibir tela de 'conexao' (QR Code), caso contrário 'conversas'
   const [activeTab, setActiveTab] = useState<TabType>(botStatus === 'connected' ? 'conversas' : 'conexao');
 
-  // Chat State
+  // Estado do Chat
   const [chatInput, setChatInput] = useState('');
   const [sendAsMode, setSendAsMode] = useState<'cliente' | 'atendente'>('cliente');
   const [isTyping, setIsTyping] = useState(false);
@@ -98,30 +98,30 @@ export const WhatsAppBotView: React.FC = () => {
   const [newClientPhone, setNewClientPhone] = useState('');
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
 
-  // QR Code Dynamic Refresh Timer
+  // Temporizador de Atualização Dinâmica do QR Code
   const [qrCountdown, setQrCountdown] = useState(45);
   const [autoPilot, setAutoPilot] = useState(true);
 
-  // Stone Modal State
+  // Estado do Modal de Pedras
   const [stoneModal, setStoneModal] = useState(false);
   const [newStone, setNewStone] = useState<Partial<ItemTabelaPedra>>({
     nome: '',
     categoria: 'Granito',
     precoM2: 950,
     corHex: '#334155',
-    indicacao: 'Cozinhas e Áreas Gourmet',
+    indicacao: 'Cozinhas e Ãreas Gourmet',
     porosidade: 'Muito Baixa',
     descricao: '',
   });
 
-  // Campaign State
-  const [campaignSegment, setCampaignSegment] = useState<'Arquitetos & Designers' | 'Clientes em Reforma' | 'Leads Frios (Recuperação)'>('Arquitetos & Designers');
+  // Estado da Campanha
+  const [campaignSegment, setCampaignSegment] = useState<'Arquitetos & Designers' | 'Clientes em Reforma' | 'Leads Frios (RecuperaÃ§Ã£o)'>('Arquitetos & Designers');
   const [campaignMsg, setCampaignMsg] = useState(
-    'Olá, {{nome}}! 💎 Estamos com lote especial de *Quartzo Calacatta e Granito Preto Absoluto* com 15% de desconto para projetos fechados nesta semana. Deseja receber nosso mostruário digital em PDF?'
+    'OlÃ¡, {{nome}}! ðŸ’Ž Estamos com lote especial de *Quartzo Calacatta e Granito Preto Absoluto* com 15% de desconto para projetos fechados nesta semana. Deseja receber nosso mostruÃ¡rio digital em PDF?'
   );
 
-  // Live Calculator State
-  const [calcMaterial, setCalcMaterial] = useState(botConfig.tabelaPedras[0]?.nome || 'Granito São Gabriel');
+  // Estado da Calculadora em Tempo Real
+  const [calcMaterial, setCalcMaterial] = useState(botConfig.tabelaPedras[0]?.nome || 'Granito SÃ£o Gabriel');
   const [calcComprimento, setCalcComprimento] = useState(2.2);
   const [calcLargura, setCalcLargura] = useState(0.6);
   const [calcSaia, setCalcSaia] = useState(false);
@@ -137,7 +137,7 @@ export const WhatsAppBotView: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedConversa?.mensagens]);
 
-  // QR Code Timer Effect
+  // Efeito do Temporizador do QR Code
   useEffect(() => {
     const timer = setInterval(() => {
       setQrCountdown((prev) => (prev <= 1 ? 50 : prev - 1));
@@ -145,10 +145,10 @@ export const WhatsAppBotView: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Text-To-Speech (Voz do Robô)
+  // Text-To-Speech (Voz do RobÃ´)
   const speakText = (text: string, msgId: string) => {
     if (!('speechSynthesis' in window)) {
-      addToast('Áudio indisponível', 'Seu navegador não suporta síntese de voz.', 'info');
+      addToast('Ãudio indisponÃ­vel', 'Seu navegador nÃ£o suporta sÃ­ntese de voz.', 'info');
       return;
     }
 
@@ -209,7 +209,7 @@ export const WhatsAppBotView: React.FC = () => {
   const handleCreateNewChat = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClientName.trim()) {
-      addToast('Nome Obrigatório', 'Informe o nome do cliente.', 'warning');
+      addToast('Nome ObrigatÃ³rio', 'Informe o nome do cliente.', 'warning');
       return;
     }
 
@@ -224,7 +224,7 @@ export const WhatsAppBotView: React.FC = () => {
   const handleAddStoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStone.nome?.trim() || !newStone.precoM2) {
-      addToast('Campos Obrigatórios', 'Preencha o nome e o preço por m².', 'warning');
+      addToast('Campos ObrigatÃ³rios', 'Preencha o nome e o preÃ§o por mÂ².', 'warning');
       return;
     }
 
@@ -235,7 +235,7 @@ export const WhatsAppBotView: React.FC = () => {
       corHex: newStone.corHex || '#334155',
       indicacao: newStone.indicacao || 'Universal',
       porosidade: newStone.porosidade || 'Muito Baixa',
-      descricao: newStone.descricao || 'Material nobre de alto padrão.',
+      descricao: newStone.descricao || 'Material nobre de alto padrÃ£o.',
     });
 
     setStoneModal(false);
@@ -244,7 +244,7 @@ export const WhatsAppBotView: React.FC = () => {
       categoria: 'Granito',
       precoM2: 950,
       corHex: '#334155',
-      indicacao: 'Cozinhas e Áreas Gourmet',
+      indicacao: 'Cozinhas e Ãreas Gourmet',
       porosidade: 'Muito Baixa',
       descricao: '',
     });
@@ -263,7 +263,7 @@ export const WhatsAppBotView: React.FC = () => {
   const totalAtendidos = botConfig.totalAtendimentosBot || conversas.reduce((acc, c) => acc + c.mensagens.length, 0);
   const totalConvertidos = conversas.filter((c) => c.statusLead === 'cadastrado_kanban').length;
 
-  // Real-time calculation formula for simulation
+  // Fórmula de cálculo em tempo real para simulação
   const selectedPedraObj = botConfig.tabelaPedras.find((p) => p.nome === calcMaterial) || botConfig.tabelaPedras[0];
   const areaM2 = Math.max(0.1, Number((calcComprimento * calcLargura).toFixed(2)));
   const valorBasePedra = areaM2 * (selectedPedraObj?.precoM2 || 850);
@@ -317,7 +317,7 @@ export const WhatsAppBotView: React.FC = () => {
               >
                 <span className={`w-2 h-2 rounded-full ${botStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : botStatus === 'pairing' ? 'bg-amber-400' : 'bg-rose-400'}`} />
                 {botStatus === 'connected'
-                  ? 'Super Robô Online (WhatsApp 24h)'
+                  ? 'Super RobÃ´ Online (WhatsApp 24h)'
                   : botStatus === 'pairing'
                   ? 'Gerando QR Code do WhatsApp...'
                   : 'Celular Desconectado'}
@@ -329,7 +329,7 @@ export const WhatsAppBotView: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
-              Super Robô de Atendimento WhatsApp para Marmorarias: Gera o QR Code, conecta o celular comercial e atende 24h no piloto automático.
+              Super RobÃ´ de Atendimento WhatsApp para Marmorarias: Gera o QR Code, conecta o celular comercial e atende 24h no piloto automÃ¡tico.
             </p>
           </div>
         </div>
@@ -339,7 +339,7 @@ export const WhatsAppBotView: React.FC = () => {
           <button
             onClick={() => simulateIncomingLeadAuto()}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-yellow-200 text-zinc-950 font-black rounded-2xl text-xs shadow-lg shadow-amber-400/20 transition-all active:scale-95 cursor-pointer"
-            title="Simula a chegada de um lead no WhatsApp e o robô agindo na hora"
+            title="Simula a chegada de um lead no WhatsApp e o robÃ´ agindo na hora"
           >
             <Zap className="w-4 h-4 stroke-[2.5px] text-zinc-950" />
             <span>Simular Lead Chamando Agora</span>
@@ -397,7 +397,7 @@ export const WhatsAppBotView: React.FC = () => {
             <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Atendimentos IA</span>
             <div className="text-2xl font-black text-zinc-100 mt-0.5">{totalAtendidos}</div>
             <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5 mt-0.5">
-              <TrendingUp className="w-3 h-3" /> 100% Automático
+              <TrendingUp className="w-3 h-3" /> 100% AutomÃ¡tico
             </span>
           </div>
           <div className="p-3 rounded-2xl bg-amber-400/15 text-amber-400 border border-amber-400/30">
@@ -409,7 +409,7 @@ export const WhatsAppBotView: React.FC = () => {
           <div>
             <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Leads no Kanban</span>
             <div className="text-2xl font-black text-emerald-400 mt-0.5">{totalConvertidos}</div>
-            <span className="text-[10px] text-zinc-400 font-mono mt-0.5">Sincronização CRM</span>
+            <span className="text-[10px] text-zinc-400 font-mono mt-0.5">SincronizaÃ§Ã£o CRM</span>
           </div>
           <div className="p-3 rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
             <Kanban className="w-6 h-6" />
@@ -418,8 +418,8 @@ export const WhatsAppBotView: React.FC = () => {
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-md">
           <div>
-            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Radar de Ações</span>
-            <div className="text-2xl font-black text-blue-400 mt-0.5">{botLogs.length} Ações</div>
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Radar de AÃ§Ãµes</span>
+            <div className="text-2xl font-black text-blue-400 mt-0.5">{botLogs.length} AÃ§Ãµes</div>
             <span className="text-[10px] text-blue-300 font-semibold mt-0.5">Tempo Real</span>
           </div>
           <div className="p-3 rounded-2xl bg-blue-500/15 text-blue-400 border border-blue-500/30">
@@ -442,14 +442,14 @@ export const WhatsAppBotView: React.FC = () => {
       {/* Tabs Navigation Bar (8 Power Modules) */}
       <div className="flex border-b border-zinc-800 gap-1.5 pb-2 overflow-x-auto">
         {[
-          { id: 'conexao', label: '📱 Gerar QR Code & Conectar', icon: QrCode },
-          { id: 'conversas', label: `💬 Conversas WhatsApp (${conversas.length})`, icon: MessageSquare },
-          { id: 'radar', label: `⚡ Radar de Ações IA (${botLogs.length})`, icon: Activity },
-          { id: 'tabela', label: `💎 Tabela de Pedras (${botConfig.tabelaPedras.length})`, icon: Layers },
-          { id: 'skills', label: '🚀 Super Poderes IA', icon: Zap },
-          { id: 'campanhas', label: '📢 Disparo em Massa', icon: Radio },
-          { id: 'calculadora', label: '🧮 Calculadora de m²', icon: Calculator },
-          { id: 'config', label: '⚙️ Configurações', icon: Sliders },
+          { id: 'conexao', label: 'ðŸ“± Gerar QR Code & Conectar', icon: QrCode },
+          { id: 'conversas', label: `ðŸ’¬ Conversas WhatsApp (${conversas.length})`, icon: MessageSquare },
+          { id: 'radar', label: `âš¡ Radar de AÃ§Ãµes IA (${botLogs.length})`, icon: Activity },
+          { id: 'tabela', label: `ðŸ’Ž Tabela de Pedras (${botConfig.tabelaPedras.length})`, icon: Layers },
+          { id: 'skills', label: 'ðŸš€ Super Poderes IA', icon: Zap },
+          { id: 'campanhas', label: 'ðŸ“¢ Disparo em Massa', icon: Radio },
+          { id: 'calculadora', label: 'ðŸ§® Calculadora de mÂ²', icon: Calculator },
+          { id: 'config', label: 'âš™ï¸ ConfiguraÃ§Ãµes', icon: Sliders },
         ].map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -470,7 +470,7 @@ export const WhatsAppBotView: React.FC = () => {
         })}
       </div>
 
-      {/* TAB: CONEXÃO & GERADOR DE QR CODE */}
+      {/* TAB: CONEXÃƒO & GERADOR DE QR CODE */}
       {activeTab === 'conexao' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
           {/* Instructions Box */}
@@ -483,7 +483,7 @@ export const WhatsAppBotView: React.FC = () => {
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-amber-400">Como Parear seu Celular</h2>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Conecte o número de WhatsApp comercial da sua marmoraria. O robô passa a agir respondendo mensagens e fazendo orçamentos automaticamente 24h por dia.
+                  Conecte o nÃºmero de WhatsApp comercial da sua marmoraria. O robÃ´ passa a agir respondendo mensagens e fazendo orÃ§amentos automaticamente 24h por dia.
                 </p>
               </div>
 
@@ -495,7 +495,7 @@ export const WhatsAppBotView: React.FC = () => {
                   <div>
                     <h4 className="font-black text-zinc-100">Abra o WhatsApp no seu Celular</h4>
                     <p className="text-zinc-400 mt-0.5">
-                      No Android: toque nos <strong>3 pontinhos</strong> no topo direito. No iPhone: toque em <strong>Configurações</strong>.
+                      No Android: toque nos <strong>3 pontinhos</strong> no topo direito. No iPhone: toque em <strong>ConfiguraÃ§Ãµes</strong>.
                     </p>
                   </div>
                 </div>
@@ -507,7 +507,7 @@ export const WhatsAppBotView: React.FC = () => {
                   <div>
                     <h4 className="font-black text-zinc-100">Selecione "Aparelhos Conectados"</h4>
                     <p className="text-zinc-400 mt-0.5">
-                      Toque no botão <strong>"Conectar um aparelho"</strong> para abrir o leitor de QR Code com a câmera do celular.
+                      Toque no botÃ£o <strong>"Conectar um aparelho"</strong> para abrir o leitor de QR Code com a cÃ¢mera do celular.
                     </p>
                   </div>
                 </div>
@@ -517,9 +517,9 @@ export const WhatsAppBotView: React.FC = () => {
                     3
                   </div>
                   <div>
-                    <h4 className="font-black text-zinc-100">Aponte a câmera para o QR Code ao lado</h4>
+                    <h4 className="font-black text-zinc-100">Aponte a cÃ¢mera para o QR Code ao lado</h4>
                     <p className="text-zinc-400 mt-0.5">
-                      A sincronização é imediata e o robô passa a agir em todas as conversas novas de clientes!
+                      A sincronizaÃ§Ã£o Ã© imediata e o robÃ´ passa a agir em todas as conversas novas de clientes!
                     </p>
                   </div>
                 </div>
@@ -531,7 +531,7 @@ export const WhatsAppBotView: React.FC = () => {
                   <span>Criptografia de Ponta a Ponta (E2EE)</span>
                 </h4>
                 <p className="text-[11px] text-zinc-300 leading-relaxed">
-                  Suas conversas e dados de clientes permanecem protegidos por criptografia direta entre o seu aparelho e a Inteligência Artificial da marmoraria.
+                  Suas conversas e dados de clientes permanecem protegidos por criptografia direta entre o seu aparelho e a InteligÃªncia Artificial da marmoraria.
                 </p>
               </div>
             </div>
@@ -543,7 +543,7 @@ export const WhatsAppBotView: React.FC = () => {
                 className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-emerald-600/30 transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5px]" />
-                <span>Validar Conexão & Deixar Robô Agir</span>
+                <span>Validar ConexÃ£o & Deixar RobÃ´ Agir</span>
               </button>
 
               <button
@@ -568,7 +568,7 @@ export const WhatsAppBotView: React.FC = () => {
                 Leitor de QR Code WhatsApp Web
               </span>
               <h3 className="text-lg font-black text-zinc-100">
-                {botStatus === 'connected' ? '✅ Celular Conectado com Sucesso' : 'Escaneie para Conectar o WhatsApp'}
+                {botStatus === 'connected' ? 'âœ… Celular Conectado com Sucesso' : 'Escaneie para Conectar o WhatsApp'}
               </h3>
             </div>
 
@@ -657,8 +657,8 @@ export const WhatsAppBotView: React.FC = () => {
                 <span className={`w-3 h-3 rounded-full ${botStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
                 <span className="text-xs sm:text-sm font-black text-zinc-200">
                   {botStatus === 'connected'
-                    ? `Sessão Ativa: ${botConfig.telefoneConectado}`
-                    : 'Aguardando Leitura da Câmera'}
+                    ? `SessÃ£o Ativa: ${botConfig.telefoneConectado}`
+                    : 'Aguardando Leitura da CÃ¢mera'}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400 mt-1 font-mono">
@@ -689,7 +689,7 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB: RADAR EM TEMPO REAL: ROBÔ AGINDO NO WHATSAPP */}
+      {/* TAB: RADAR EM TEMPO REAL: ROBÃ” AGINDO NO WHATSAPP */}
       {activeTab === 'radar' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
           {/* Left: Live Terminal Log */}
@@ -698,11 +698,11 @@ export const WhatsAppBotView: React.FC = () => {
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500/10 text-blue-400 border border-blue-500/30 mb-2">
                   <Terminal className="w-3.5 h-3.5" />
-                  <span>Feed de Execução em Tempo Real</span>
+                  <span>Feed de ExecuÃ§Ã£o em Tempo Real</span>
                 </div>
-                <h2 className="text-xl font-black text-amber-400">Radar de Ações Autônomas da IA</h2>
+                <h2 className="text-xl font-black text-amber-400">Radar de AÃ§Ãµes AutÃ´nomas da IA</h2>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Acompanhe exatamente o que o robô está pensando, calculando e respondendo no WhatsApp.
+                  Acompanhe exatamente o que o robÃ´ estÃ¡ pensando, calculando e respondendo no WhatsApp.
                 </p>
               </div>
 
@@ -752,7 +752,7 @@ export const WhatsAppBotView: React.FC = () => {
           <div className="lg:col-span-4 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl flex flex-col justify-between">
             <div className="space-y-4">
               <span className="text-xs font-black text-amber-400 uppercase tracking-wider block">
-                Piloto Automático do WhatsApp
+                Piloto AutomÃ¡tico do WhatsApp
               </span>
 
               <div className="p-4 bg-zinc-850 rounded-2xl border border-zinc-800 space-y-3 text-xs">
@@ -765,12 +765,12 @@ export const WhatsAppBotView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-300 font-bold">Tempo Médio de Resposta:</span>
+                  <span className="text-zinc-300 font-bold">Tempo MÃ©dio de Resposta:</span>
                   <span className="text-zinc-100 font-mono font-black">&lt; 2.1 segundos</span>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-300 font-bold">Taxa de Conversão:</span>
+                  <span className="text-zinc-300 font-bold">Taxa de ConversÃ£o:</span>
                   <span className="text-amber-400 font-black">94.8%</span>
                 </div>
               </div>
@@ -778,10 +778,10 @@ export const WhatsAppBotView: React.FC = () => {
               <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-xs text-emerald-300 space-y-1">
                 <span className="font-bold block flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4" />
-                  <span>Inteligência Comercial em Ação</span>
+                  <span>InteligÃªncia Comercial em AÃ§Ã£o</span>
                 </span>
                 <p className="text-[11px] text-zinc-300 leading-relaxed">
-                  O robô detecta automaticamente quando o cliente tem pressa ou alto poder aquisitivo, priorizando materiais nobres como Quartzitos e Dekton.
+                  O robÃ´ detecta automaticamente quando o cliente tem pressa ou alto poder aquisitivo, priorizando materiais nobres como Quartzitos e Dekton.
                 </p>
               </div>
             </div>
@@ -909,7 +909,7 @@ export const WhatsAppBotView: React.FC = () => {
                           ) : (
                             <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1">
                               <Bot className="w-3 h-3" />
-                              <span>Super Robô</span>
+                              <span>Super RobÃ´</span>
                             </span>
                           )}
 
@@ -956,7 +956,7 @@ export const WhatsAppBotView: React.FC = () => {
                       </div>
                       <p className="text-[11px] text-emerald-400 flex items-center gap-1.5 mt-0.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>Online no WhatsApp • IA Gemini 3.7 Monitorando</span>
+                        <span>Online no WhatsApp â€¢ IA Gemini 3.7 Monitorando</span>
                       </p>
                     </div>
                   </div>
@@ -975,7 +975,7 @@ export const WhatsAppBotView: React.FC = () => {
                     <button
                       onClick={() => triggerFollowUp(selectedConversa.id)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold shadow transition-all cursor-pointer active:scale-95"
-                      title="Disparar mensagem de recuperação de vendas de 24h"
+                      title="Disparar mensagem de recuperaÃ§Ã£o de vendas de 24h"
                     >
                       <Flame className="w-3.5 h-3.5" />
                       <span>Follow-up 24h</span>
@@ -1012,26 +1012,26 @@ export const WhatsAppBotView: React.FC = () => {
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <span className="text-zinc-400 font-bold flex items-center gap-1">
                         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Dados Identificados pelo Robô:</span>
+                        <span>Dados Identificados pelo RobÃ´:</span>
                       </span>
                       {selectedConversa.dadosExtraidos.servico && (
                         <span className="bg-zinc-850 px-2.5 py-0.5 rounded-lg border border-zinc-700 text-zinc-200 font-medium">
-                          🛠️ {selectedConversa.dadosExtraidos.servico}
+                          ðŸ› ï¸ {selectedConversa.dadosExtraidos.servico}
                         </span>
                       )}
                       {selectedConversa.dadosExtraidos.material && (
                         <span className="bg-zinc-850 px-2.5 py-0.5 rounded-lg border border-zinc-700 text-amber-300 font-bold">
-                          💎 {selectedConversa.dadosExtraidos.material}
+                          ðŸ’Ž {selectedConversa.dadosExtraidos.material}
                         </span>
                       )}
                       {selectedConversa.dadosExtraidos.medidas && (
                         <span className="bg-zinc-850 px-2.5 py-0.5 rounded-lg border border-zinc-700 text-zinc-200">
-                          📐 {selectedConversa.dadosExtraidos.medidas}
+                          ðŸ“ {selectedConversa.dadosExtraidos.medidas}
                         </span>
                       )}
                       {selectedConversa.dadosExtraidos.valorEstimado && (
                         <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-black px-2.5 py-0.5 rounded-lg">
-                          💰 ~R$ {selectedConversa.dadosExtraidos.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          ðŸ’° ~R$ {selectedConversa.dadosExtraidos.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </span>
                       )}
                     </div>
@@ -1048,7 +1048,7 @@ export const WhatsAppBotView: React.FC = () => {
                 >
                   <div className="flex justify-center my-2">
                     <span className="text-[10px] text-zinc-400 bg-zinc-900/90 border border-zinc-800 px-3.5 py-1 rounded-full shadow">
-                      🔒 Mensagens protegidas e sincronizadas em tempo real com o número da marmoraria
+                      ðŸ”’ Mensagens protegidas e sincronizadas em tempo real com o nÃºmero da marmoraria
                     </span>
                   </div>
 
@@ -1077,7 +1077,7 @@ export const WhatsAppBotView: React.FC = () => {
                                 isClient ? 'text-amber-400' : isBot ? 'text-emerald-300' : 'text-blue-200'
                               }`}
                             >
-                              {isClient ? selectedConversa.clienteNome : isBot ? `🤖 ${botConfig.nomeRobo}` : '👤 Vendedor Humano'}
+                              {isClient ? selectedConversa.clienteNome : isBot ? `ðŸ¤– ${botConfig.nomeRobo}` : 'ðŸ‘¤ Vendedor Humano'}
                             </span>
 
                             {/* Voice Button to speak message */}
@@ -1088,7 +1088,7 @@ export const WhatsAppBotView: React.FC = () => {
                                   ? 'bg-amber-400 text-zinc-950 animate-pulse'
                                   : 'text-zinc-300 hover:text-white hover:bg-black/20'
                               }`}
-                              title={isSpeaking ? 'Parar Áudio' : 'Ouvir mensagem por voz'}
+                              title={isSpeaking ? 'Parar Ãudio' : 'Ouvir mensagem por voz'}
                             >
                               {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                             </button>
@@ -1121,7 +1121,7 @@ export const WhatsAppBotView: React.FC = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <h5 className="text-xs font-black text-amber-400 truncate">{msg.anexo.nome}</h5>
-                                  <p className="text-[10px] text-zinc-400">{msg.anexo.tamanho} • Proposta Formal Timbrada</p>
+                                  <p className="text-[10px] text-zinc-400">{msg.anexo.tamanho} â€¢ Proposta Formal Timbrada</p>
                                 </div>
                               </div>
 
@@ -1134,7 +1134,7 @@ export const WhatsAppBotView: React.FC = () => {
                                     </span>
                                   </div>
                                   <div className="text-zinc-400 text-[10px]">
-                                    Pedra: {msg.anexo.dadosOrcamento.material} • Medidas: {msg.anexo.dadosOrcamento.medidas}
+                                    Pedra: {msg.anexo.dadosOrcamento.material} â€¢ Medidas: {msg.anexo.dadosOrcamento.medidas}
                                   </div>
                                 </div>
                               )}
@@ -1158,7 +1158,7 @@ export const WhatsAppBotView: React.FC = () => {
                   {isTyping && (
                     <div className="flex items-center gap-2 text-xs text-zinc-300 bg-zinc-900/90 px-4 py-2 rounded-full w-fit border border-zinc-800 shadow-md animate-pulse">
                       <Bot className="w-4 h-4 text-amber-400 animate-bounce" />
-                      <span>{botConfig.nomeRobo} está gerando a resposta...</span>
+                      <span>{botConfig.nomeRobo} estÃ¡ gerando a resposta...</span>
                     </div>
                   )}
 
@@ -1169,7 +1169,7 @@ export const WhatsAppBotView: React.FC = () => {
                 <div className="px-4 py-2 bg-zinc-900 border-t border-zinc-800 flex items-center gap-2 overflow-x-auto text-xs">
                   <span className="text-[11px] font-bold text-zinc-400 whitespace-nowrap flex items-center gap-1">
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Simular Envio Rápido:</span>
+                    <span>Simular Envio RÃ¡pido:</span>
                   </span>
 
                   <button
@@ -1178,7 +1178,7 @@ export const WhatsAppBotView: React.FC = () => {
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-medium whitespace-nowrap flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <Camera className="w-3 h-3 text-amber-400" />
-                    <span>📷 Planta Baixa</span>
+                    <span>ðŸ“· Planta Baixa</span>
                   </button>
 
                   <button
@@ -1187,7 +1187,7 @@ export const WhatsAppBotView: React.FC = () => {
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-medium whitespace-nowrap flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <Camera className="w-3 h-3 text-amber-400" />
-                    <span>📷 Foto de Cozinha</span>
+                    <span>ðŸ“· Foto de Cozinha</span>
                   </button>
 
                   <button
@@ -1196,23 +1196,23 @@ export const WhatsAppBotView: React.FC = () => {
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-medium whitespace-nowrap flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <Camera className="w-3 h-3 text-amber-400" />
-                    <span>📷 Lavatório Banheiro</span>
+                    <span>ðŸ“· LavatÃ³rio Banheiro</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setChatInput('Quanto fica uma bancada em Granito São Gabriel de 2,40m x 0,60m com cooktop?')}
+                    onClick={() => setChatInput('Quanto fica uma bancada em Granito SÃ£o Gabriel de 2,40m x 0,60m com cooktop?')}
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer"
                   >
-                    💬 Cotação Cozinha 2.40m
+                    ðŸ’¬ CotaÃ§Ã£o Cozinha 2.40m
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setChatInput('Gostaria de agendar a visita técnica de medição gratuita na minha casa.')}
+                    onClick={() => setChatInput('Gostaria de agendar a visita tÃ©cnica de mediÃ§Ã£o gratuita na minha casa.')}
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer"
                   >
-                    📅 Agendar Medição
+                    ðŸ“… Agendar MediÃ§Ã£o
                   </button>
                 </div>
 
@@ -1231,7 +1231,7 @@ export const WhatsAppBotView: React.FC = () => {
                             : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
                         }`}
                       >
-                        📱 Cliente WhatsApp (Testa IA)
+                        ðŸ“± Cliente WhatsApp (Testa IA)
                       </button>
                       <button
                         type="button"
@@ -1242,7 +1242,7 @@ export const WhatsAppBotView: React.FC = () => {
                             : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
                         }`}
                       >
-                        👤 Atendente Humano
+                        ðŸ‘¤ Atendente Humano
                       </button>
                     </div>
 
@@ -1258,7 +1258,7 @@ export const WhatsAppBotView: React.FC = () => {
                       onChange={(e) => setChatInput(e.target.value)}
                       placeholder={
                         sendAsMode === 'cliente'
-                          ? 'Digite como se fosse o cliente (ex: "Gostaria de saber o preço para bancada de cozinha em Dekton")...'
+                          ? 'Digite como se fosse o cliente (ex: "Gostaria de saber o preÃ§o para bancada de cozinha em Dekton")...'
                           : 'Digite como atendente humano para responder diretamente...'
                       }
                       className="flex-1 bg-zinc-900 border border-zinc-750 rounded-2xl px-4 py-3 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-amber-400 shadow-inner"
@@ -1300,11 +1300,11 @@ export const WhatsAppBotView: React.FC = () => {
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500/10 text-blue-400 border border-blue-500/30 mb-2">
                 <Layers className="w-3.5 h-3.5" />
-                <span>Base de Conhecimento Técnico-Comercial</span>
+                <span>Base de Conhecimento TÃ©cnico-Comercial</span>
               </div>
-              <h2 className="text-xl font-black text-amber-400">Catálogo e Tabela de Preços por m²</h2>
+              <h2 className="text-xl font-black text-amber-400">CatÃ¡logo e Tabela de PreÃ§os por mÂ²</h2>
               <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
-                Esta tabela alimenta diretamente as respostas da Inteligência Artificial do Robô. Quando o cliente pergunta o preço no WhatsApp, a IA consulta estes valores e calcula o orçamento automaticamente.
+                Esta tabela alimenta diretamente as respostas da InteligÃªncia Artificial do RobÃ´. Quando o cliente pergunta o preÃ§o no WhatsApp, a IA consulta estes valores e calcula o orÃ§amento automaticamente.
               </p>
             </div>
 
@@ -1313,7 +1313,7 @@ export const WhatsAppBotView: React.FC = () => {
               className="inline-flex items-center gap-2 px-5 py-3 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black text-xs rounded-2xl shadow-lg transition-all active:scale-95 cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4 stroke-[2.5px]" />
-              <span>Adicionar Nova Pedra ao Catálogo</span>
+              <span>Adicionar Nova Pedra ao CatÃ¡logo</span>
             </button>
           </div>
 
@@ -1336,10 +1336,10 @@ export const WhatsAppBotView: React.FC = () => {
                   </div>
 
                   <div className="text-right">
-                    <span className="text-[10px] text-zinc-400 uppercase font-bold block">Preço Base</span>
+                    <span className="text-[10px] text-zinc-400 uppercase font-bold block">PreÃ§o Base</span>
                     <span className="text-base font-black text-emerald-400">
                       R$ {pedra.precoM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      <span className="text-xs text-zinc-400 font-normal">/m²</span>
+                      <span className="text-xs text-zinc-400 font-normal">/mÂ²</span>
                     </span>
                   </div>
                 </div>
@@ -1350,18 +1350,18 @@ export const WhatsAppBotView: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-zinc-800/80">
                   <div className="p-2 bg-zinc-850 rounded-xl">
-                    <span className="text-zinc-400 text-[10px] block font-semibold">Indicação Ideal:</span>
+                    <span className="text-zinc-400 text-[10px] block font-semibold">IndicaÃ§Ã£o Ideal:</span>
                     <span className="text-zinc-200 font-bold truncate block">{pedra.indicacao}</span>
                   </div>
                   <div className="p-2 bg-zinc-850 rounded-xl">
-                    <span className="text-zinc-400 text-[10px] block font-semibold">Nível Porosidade:</span>
+                    <span className="text-zinc-400 text-[10px] block font-semibold">NÃ­vel Porosidade:</span>
                     <span className="text-zinc-200 font-bold block">{pedra.porosidade}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-2">
-                    <label className="text-[11px] font-bold text-zinc-400">Preço:</label>
+                    <label className="text-[11px] font-bold text-zinc-400">PreÃ§o:</label>
                     <input
                       type="number"
                       value={pedra.precoM2}
@@ -1373,7 +1373,7 @@ export const WhatsAppBotView: React.FC = () => {
                   <button
                     onClick={() => deleteTabelaPedra(pedra.id)}
                     className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
-                    title="Excluir pedra do catálogo"
+                    title="Excluir pedra do catÃ¡logo"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -1384,17 +1384,17 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB: SUPER PODERES & HABILIDADES DO ROBÔ */}
+      {/* TAB: SUPER PODERES & HABILIDADES DO ROBÃ” */}
       {activeTab === 'skills' && (
         <div className="space-y-6 animate-fade-in">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-2">
               <Zap className="w-3.5 h-3.5" />
-              <span>Inteligência Artificial Comercial Multimodal</span>
+              <span>InteligÃªncia Artificial Comercial Multimodal</span>
             </div>
-            <h2 className="text-xl font-black text-amber-400">Habilidades e Super Poderes do Robô</h2>
+            <h2 className="text-xl font-black text-amber-400">Habilidades e Super Poderes do RobÃ´</h2>
             <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
-              Ative ou desative capacidades avançadas para o assistente de WhatsApp da marmoraria.
+              Ative ou desative capacidades avanÃ§adas para o assistente de WhatsApp da marmoraria.
             </p>
           </div>
 
@@ -1459,22 +1459,22 @@ export const WhatsAppBotView: React.FC = () => {
                 <Radio className="w-3.5 h-3.5" />
                 <span>Super Broadcast WhatsApp</span>
               </div>
-              <h2 className="text-xl font-black text-amber-400">Disparador de Campanhas & Promoções</h2>
+              <h2 className="text-xl font-black text-amber-400">Disparador de Campanhas & PromoÃ§Ãµes</h2>
               <p className="text-xs text-zinc-400 mt-1">
-                Envie mensagens automáticas em massa personalizadas com o nome e o projeto de cada cliente.
+                Envie mensagens automÃ¡ticas em massa personalizadas com o nome e o projeto de cada cliente.
               </p>
             </div>
 
             <div className="space-y-4 text-xs">
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-2">
-                  Segmento de Público-Alvo
+                  Segmento de PÃºblico-Alvo
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     'Arquitetos & Designers',
                     'Clientes em Reforma',
-                    'Leads Frios (Recuperação)',
+                    'Leads Frios (RecuperaÃ§Ã£o)',
                   ].map((seg) => (
                     <button
                       key={seg}
@@ -1494,7 +1494,7 @@ export const WhatsAppBotView: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                  Modelo da Mensagem (Suporta Tags Dinâmicas)
+                  Modelo da Mensagem (Suporta Tags DinÃ¢micas)
                 </label>
                 <textarea
                   rows={5}
@@ -1503,7 +1503,7 @@ export const WhatsAppBotView: React.FC = () => {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl p-3.5 text-zinc-100 focus:border-amber-400 focus:outline-none resize-none leading-relaxed text-xs sm:text-sm font-sans"
                 />
                 <div className="flex items-center gap-2 mt-2 text-[11px] text-zinc-400 flex-wrap">
-                  <span className="font-semibold text-zinc-300">Variáveis disponíveis:</span>
+                  <span className="font-semibold text-zinc-300">VariÃ¡veis disponÃ­veis:</span>
                   <button
                     type="button"
                     onClick={() => setCampaignMsg((prev) => prev + ' {{nome}}')}
@@ -1545,20 +1545,20 @@ export const WhatsAppBotView: React.FC = () => {
           <div className="lg:col-span-5 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl flex flex-col justify-between">
             <div>
               <span className="text-xs font-black text-amber-400 uppercase tracking-wider block mb-1">
-                Visualização no WhatsApp do Cliente
+                VisualizaÃ§Ã£o no WhatsApp do Cliente
               </span>
-              <p className="text-xs text-zinc-400">Veja exatamente como o cliente receberá no celular:</p>
+              <p className="text-xs text-zinc-400">Veja exatamente como o cliente receberÃ¡ no celular:</p>
             </div>
 
             <div className="bg-[#0b141a] p-4 rounded-2xl border border-zinc-800 space-y-2 shadow-inner">
               <div className="bg-[#005c4b] text-white p-3.5 rounded-2xl rounded-tr-none text-xs leading-relaxed whitespace-pre-wrap shadow">
                 <span className="text-[10px] font-black text-emerald-300 uppercase block mb-1">
-                  🤖 {botConfig.nomeRobo}
+                  ðŸ¤– {botConfig.nomeRobo}
                 </span>
                 {campaignMsg
                   .replace(/\{\{nome\}\}/g, selectedConversa?.clienteNome || 'Mariana Duarte')
                   .replace(/\{\{servico\}\}/g, selectedConversa?.dadosExtraidos?.servico || 'Bancada de Cozinha')
-                  .replace(/\{\{material\}\}/g, selectedConversa?.dadosExtraidos?.material || 'Granito São Gabriel')}
+                  .replace(/\{\{material\}\}/g, selectedConversa?.dadosExtraidos?.material || 'Granito SÃ£o Gabriel')}
                 <div className="text-right text-[10px] text-zinc-400 mt-1 flex items-center justify-end gap-1">
                   <span>14:30</span>
                   <CheckCheck className="w-3.5 h-3.5 text-emerald-300" />
@@ -1568,24 +1568,24 @@ export const WhatsAppBotView: React.FC = () => {
 
             <div className="p-4 bg-zinc-850 rounded-2xl border border-zinc-800 text-xs text-zinc-400 space-y-1">
               <span className="font-bold text-zinc-200 block">Dica Comercial:</span>
-              <p>Campanhas com oferta de medição técnica gratuita ou brinde de cuba inox têm 68% mais taxa de resposta!</p>
+              <p>Campanhas com oferta de mediÃ§Ã£o tÃ©cnica gratuita ou brinde de cuba inox tÃªm 68% mais taxa de resposta!</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB: CALCULADORA DE ORÇAMENTO RÁPIDO */}
+      {/* TAB: CALCULADORA DE ORÃ‡AMENTO RÃPIDO */}
       {activeTab === 'calculadora' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
           <div className="lg:col-span-7 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-2">
                 <Calculator className="w-3.5 h-3.5" />
-                <span>Simulador de Preço & Fórmula de Marmoraria</span>
+                <span>Simulador de PreÃ§o & FÃ³rmula de Marmoraria</span>
               </div>
-              <h2 className="text-xl font-black text-amber-400">Calculadora de Pré-Orçamento</h2>
+              <h2 className="text-xl font-black text-amber-400">Calculadora de PrÃ©-OrÃ§amento</h2>
               <p className="text-xs text-zinc-400 mt-1">
-                Configure dimensões e acabamentos para simular o orçamento em tempo real.
+                Configure dimensÃµes e acabamentos para simular o orÃ§amento em tempo real.
               </p>
             </div>
 
@@ -1601,7 +1601,7 @@ export const WhatsAppBotView: React.FC = () => {
                 >
                   {botConfig.tabelaPedras.map((p) => (
                     <option key={p.id} value={p.nome}>
-                      {p.nome} — R$ {p.precoM2}/m² ({p.categoria})
+                      {p.nome} â€” R$ {p.precoM2}/mÂ² ({p.categoria})
                     </option>
                   ))}
                 </select>
@@ -1638,7 +1638,7 @@ export const WhatsAppBotView: React.FC = () => {
               {/* Acabamentos Adicionais */}
               <div className="space-y-2.5 pt-2">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                  Acabamentos e Serviços Especiais
+                  Acabamentos e ServiÃ§os Especiais
                 </label>
 
                 <div className="grid grid-cols-2 gap-2.5">
@@ -1651,7 +1651,7 @@ export const WhatsAppBotView: React.FC = () => {
                         : 'bg-zinc-850 border-zinc-750 text-zinc-400'
                     }`}
                   >
-                    <span>Meia-Esquadria 45º (Invisível)</span>
+                    <span>Meia-Esquadria 45Âº (InvisÃ­vel)</span>
                     <span className="text-[10px] font-mono">+R$ 120/m</span>
                   </button>
 
@@ -1702,13 +1702,13 @@ export const WhatsAppBotView: React.FC = () => {
           <div className="lg:col-span-5 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl flex flex-col justify-between">
             <div className="space-y-4">
               <span className="text-xs font-black text-amber-400 uppercase tracking-wider block">
-                Detalhamento do Orçamento
+                Detalhamento do OrÃ§amento
               </span>
 
               <div className="p-4 bg-zinc-850 rounded-2xl border border-zinc-800 space-y-2.5 text-xs">
                 <div className="flex justify-between text-zinc-300">
-                  <span>Área Total:</span>
-                  <span className="font-black text-zinc-100">{areaM2} m²</span>
+                  <span>Ãrea Total:</span>
+                  <span className="font-black text-zinc-100">{areaM2} mÂ²</span>
                 </div>
                 <div className="flex justify-between text-zinc-300">
                   <span>Chapa ({calcMaterial}):</span>
@@ -1716,7 +1716,7 @@ export const WhatsAppBotView: React.FC = () => {
                 </div>
                 {calcMeiaEsquadria && (
                   <div className="flex justify-between text-zinc-300">
-                    <span>Meia-Esquadria 45º:</span>
+                    <span>Meia-Esquadria 45Âº:</span>
                     <span className="font-mono">+ R$ {valorMeiaEsquadria.toFixed(2)}</span>
                   </div>
                 )}
@@ -1739,7 +1739,7 @@ export const WhatsAppBotView: React.FC = () => {
                   </div>
                 )}
                 <div className="flex justify-between text-zinc-300">
-                  <span>Frete & Instalação:</span>
+                  <span>Frete & InstalaÃ§Ã£o:</span>
                   <span className="font-mono">+ R$ {valorFreteInstalacao.toFixed(2)}</span>
                 </div>
 
@@ -1752,7 +1752,7 @@ export const WhatsAppBotView: React.FC = () => {
               </div>
 
               <div className="p-3 bg-amber-400/10 border border-amber-400/30 rounded-xl text-[11px] text-amber-300">
-                💳 Condição sugerida pelo Robô: 10x de R$ {(valorTotalCalculado / 10).toFixed(2)} sem juros ou 5% no PIX.
+                ðŸ’³ CondiÃ§Ã£o sugerida pelo RobÃ´: 10x de R$ {(valorTotalCalculado / 10).toFixed(2)} sem juros ou 5% no PIX.
               </div>
             </div>
 
@@ -1760,22 +1760,22 @@ export const WhatsAppBotView: React.FC = () => {
               type="button"
               onClick={() => {
                 if (selectedConversa) {
-                  const txt = `Olá, ${selectedConversa.clienteNome}! Fiz o cálculo para ${calcComprimento}m x ${calcLargura}m em ${calcMaterial}: Total de R$ ${valorTotalCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} com acabamentos inclusos.`;
+                  const txt = `OlÃ¡, ${selectedConversa.clienteNome}! Fiz o cÃ¡lculo para ${calcComprimento}m x ${calcLargura}m em ${calcMaterial}: Total de R$ ${valorTotalCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} com acabamentos inclusos.`;
                   sendChatMessage(selectedConversa.id, txt, 'atendente');
                   setActiveTab('conversas');
-                  addToast('Cotação Enviada', 'Orçamento adicionado na conversa do WhatsApp.', 'success');
+                  addToast('CotaÃ§Ã£o Enviada', 'OrÃ§amento adicionado na conversa do WhatsApp.', 'success');
                 }
               }}
               className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black text-xs sm:text-sm rounded-2xl shadow-lg transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
             >
               <Send className="w-4 h-4" />
-              <span>Enviar este Orçamento no Chat Atual</span>
+              <span>Enviar este OrÃ§amento no Chat Atual</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* TAB: CONFIGURAÇÕES DO ROBÔ */}
+      {/* TAB: CONFIGURAÃ‡Ã•ES DO ROBÃ” */}
       {activeTab === 'config' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
           {/* General Bot Configs */}
@@ -1783,17 +1783,17 @@ export const WhatsAppBotView: React.FC = () => {
             <div>
               <h2 className="text-base font-black text-amber-400 flex items-center gap-2">
                 <Bot className="w-5 h-5" />
-                <span>Identidade & Mensagens Automáticas</span>
+                <span>Identidade & Mensagens AutomÃ¡ticas</span>
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Personalize o nome do assistente, mensagem de boas-vindas e regras de horário.
+                Personalize o nome do assistente, mensagem de boas-vindas e regras de horÃ¡rio.
               </p>
             </div>
 
             <div className="space-y-4 text-xs">
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                  Nome do Super Robô
+                  Nome do Super RobÃ´
                 </label>
                 <input
                   type="text"
@@ -1806,13 +1806,13 @@ export const WhatsAppBotView: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                  Tom de Voz da Inteligência Artificial
+                  Tom de Voz da InteligÃªncia Artificial
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'amigavel', label: '😊 Amigável & Empático' },
-                    { id: 'profissional', label: '👔 Comercial & Nobre' },
-                    { id: 'direto', label: '⚡ Rápido & Prático' },
+                    { id: 'amigavel', label: 'ðŸ˜Š AmigÃ¡vel & EmpÃ¡tico' },
+                    { id: 'profissional', label: 'ðŸ‘” Comercial & Nobre' },
+                    { id: 'direto', label: 'âš¡ RÃ¡pido & PrÃ¡tico' },
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -1832,7 +1832,7 @@ export const WhatsAppBotView: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                  Mensagem de Saudação & Boas-Vindas
+                  Mensagem de SaudaÃ§Ã£o & Boas-Vindas
                 </label>
                 <textarea
                   rows={3}
@@ -1845,7 +1845,7 @@ export const WhatsAppBotView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                    Horário Início
+                    HorÃ¡rio InÃ­cio
                   </label>
                   <input
                     type="time"
@@ -1856,7 +1856,7 @@ export const WhatsAppBotView: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                    Horário Encerramento
+                    HorÃ¡rio Encerramento
                   </label>
                   <input
                     type="time"
@@ -1869,7 +1869,7 @@ export const WhatsAppBotView: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                  Mensagem Fora do Horário Comercial
+                  Mensagem Fora do HorÃ¡rio Comercial
                 </label>
                 <textarea
                   rows={2}
@@ -1887,10 +1887,10 @@ export const WhatsAppBotView: React.FC = () => {
               <div>
                 <h2 className="text-base font-black text-amber-400 flex items-center gap-2">
                   <Kanban className="w-5 h-5" />
-                  <span>Automação com o Quadro Kanban CRM</span>
+                  <span>AutomaÃ§Ã£o com o Quadro Kanban CRM</span>
                 </h2>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Defina o comportamento do Robô ao capturar dados de novos clientes.
+                  Defina o comportamento do RobÃ´ ao capturar dados de novos clientes.
                 </p>
               </div>
 
@@ -1899,7 +1899,7 @@ export const WhatsAppBotView: React.FC = () => {
                   <div>
                     <h4 className="font-black text-zinc-100">Auto-Cadastro de Leads</h4>
                     <p className="text-[11px] text-zinc-400 mt-0.5">
-                      Criar automaticamente um cartão de "Novo Atendimento" no Kanban assim que o cliente solicitar orçamento.
+                      Criar automaticamente um cartÃ£o de "Novo Atendimento" no Kanban assim que o cliente solicitar orÃ§amento.
                     </p>
                   </div>
                   <button
@@ -1918,9 +1918,9 @@ export const WhatsAppBotView: React.FC = () => {
 
                 <div className="p-4 bg-zinc-850 border border-zinc-800 rounded-2xl flex items-center justify-between gap-3">
                   <div>
-                    <h4 className="font-black text-zinc-100">Geração de Proposta PDF Automática</h4>
+                    <h4 className="font-black text-zinc-100">GeraÃ§Ã£o de Proposta PDF AutomÃ¡tica</h4>
                     <p className="text-[11px] text-zinc-400 mt-0.5">
-                      Anexar arquivo de proposta formal com descritivo e Chave PIX quando cliente pedir cotação.
+                      Anexar arquivo de proposta formal com descritivo e Chave PIX quando cliente pedir cotaÃ§Ã£o.
                     </p>
                   </div>
                   <button
@@ -1940,7 +1940,7 @@ export const WhatsAppBotView: React.FC = () => {
                 <div className="p-4 bg-zinc-850 border border-zinc-800 rounded-2xl space-y-2">
                   <h4 className="font-black text-zinc-100 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Conexão de Webhook Externo (API WhatsApp)</span>
+                    <span>ConexÃ£o de Webhook Externo (API WhatsApp)</span>
                   </h4>
                   <p className="text-[11px] text-zinc-400 leading-relaxed">
                     URL de Webhook pronta para receber mensagens de provedores como Evolution API, Z-API, Baileys ou Meta Cloud API:
@@ -1954,31 +1954,31 @@ export const WhatsAppBotView: React.FC = () => {
 
             <div className="pt-4 border-t border-zinc-800">
               <button
-                onClick={() => addToast('Configurações Salvas', 'Parâmetros do Super Robô aplicados com sucesso!', 'success')}
+                onClick={() => addToast('ConfiguraÃ§Ãµes Salvas', 'ParÃ¢metros do Super RobÃ´ aplicados com sucesso!', 'success')}
                 className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black text-xs sm:text-sm rounded-2xl shadow-xl transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5px]" />
-                <span>Salvar Todas as Configurações do Super Robô</span>
+                <span>Salvar Todas as ConfiguraÃ§Ãµes do Super RobÃ´</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal: Adicionar Nova Pedra ao Catálogo */}
+      {/* Modal: Adicionar Nova Pedra ao CatÃ¡logo */}
       {stoneModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-800 w-full max-w-lg overflow-hidden">
             <div className="px-6 py-4 bg-zinc-850 border-b border-zinc-800 flex items-center justify-between">
               <h3 className="text-sm font-black text-amber-400 flex items-center gap-2">
                 <Layers className="w-4 h-4" />
-                <span>Adicionar Pedra ao Catálogo do Robô</span>
+                <span>Adicionar Pedra ao CatÃ¡logo do RobÃ´</span>
               </h3>
               <button
                 onClick={() => setStoneModal(false)}
                 className="text-zinc-400 hover:text-zinc-200 text-xs font-bold p-1"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -2008,7 +2008,7 @@ export const WhatsAppBotView: React.FC = () => {
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 focus:border-amber-400 focus:outline-none font-bold"
                   >
                     <option value="Granito">Granito</option>
-                    <option value="Mármore">Mármore</option>
+                    <option value="MÃ¡rmore">MÃ¡rmore</option>
                     <option value="Quartzo">Quartzo</option>
                     <option value="Quartzito">Quartzito</option>
                     <option value="Dekton / Ultracompacto">Dekton / Ultracompacto</option>
@@ -2018,7 +2018,7 @@ export const WhatsAppBotView: React.FC = () => {
 
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                    Preço por m² (R$)
+                    PreÃ§o por mÂ² (R$)
                   </label>
                   <input
                     type="number"
@@ -2034,23 +2034,23 @@ export const WhatsAppBotView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                    Indicação Principal
+                    IndicaÃ§Ã£o Principal
                   </label>
                   <select
                     value={newStone.indicacao}
                     onChange={(e) => setNewStone({ ...newStone, indicacao: e.target.value as any })}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 focus:border-amber-400 focus:outline-none"
                   >
-                    <option value="Cozinhas e Áreas Gourmet">Cozinhas e Áreas Gourmet</option>
-                    <option value="Banheiros e Lavatórios">Banheiros e Lavatórios</option>
-                    <option value="Áreas Nobres e Internas">Áreas Nobres e Internas</option>
+                    <option value="Cozinhas e Ãreas Gourmet">Cozinhas e Ãreas Gourmet</option>
+                    <option value="Banheiros e LavatÃ³rios">Banheiros e LavatÃ³rios</option>
+                    <option value="Ãreas Nobres e Internas">Ãreas Nobres e Internas</option>
                     <option value="Universal">Universal</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                    Nível de Porosidade
+                    NÃ­vel de Porosidade
                   </label>
                   <select
                     value={newStone.porosidade}
@@ -2059,20 +2059,20 @@ export const WhatsAppBotView: React.FC = () => {
                   >
                     <option value="Muito Baixa">Muito Baixa (Zero Manchas)</option>
                     <option value="Baixa">Baixa</option>
-                    <option value="Média">Média (Requer Resina)</option>
+                    <option value="MÃ©dia">MÃ©dia (Requer Resina)</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                  Descrição Técnica & Comercial
+                  DescriÃ§Ã£o TÃ©cnica & Comercial
                 </label>
                 <textarea
                   rows={3}
                   value={newStone.descricao}
                   onChange={(e) => setNewStone({ ...newStone, descricao: e.target.value })}
-                  placeholder="Ex: Rocha de alta resistência a riscos e manchas, ideal para bancadas e ilhas."
+                  placeholder="Ex: Rocha de alta resistÃªncia a riscos e manchas, ideal para bancadas e ilhas."
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 focus:border-amber-400 focus:outline-none resize-none"
                 />
               </div>
@@ -2089,7 +2089,7 @@ export const WhatsAppBotView: React.FC = () => {
                   type="submit"
                   className="px-5 py-2.5 bg-amber-400 text-zinc-950 font-black rounded-xl hover:bg-amber-300 shadow-md"
                 >
-                  Adicionar ao Catálogo
+                  Adicionar ao CatÃ¡logo
                 </button>
               </div>
             </form>
@@ -2110,7 +2110,7 @@ export const WhatsAppBotView: React.FC = () => {
                 onClick={() => setNewChatModal(false)}
                 className="text-zinc-400 hover:text-zinc-200 text-xs font-bold p-1"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -2131,7 +2131,7 @@ export const WhatsAppBotView: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                  Número de WhatsApp
+                  NÃºmero de WhatsApp
                 </label>
                 <input
                   type="tel"

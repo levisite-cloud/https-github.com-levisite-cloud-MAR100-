@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
@@ -14,13 +14,13 @@ import { LayoutDashboard, Kanban, FileText, PlusCircle, Settings, Bot } from 'lu
 
 const MobileBottomNav: React.FC = () => {
   const { activeView, setActiveView, atendimentos, empresa, conversas } = useApp();
-  const activeCount = atendimentos.filter((a) => a.status !== 'Concluído').length;
+  const activeCount = atendimentos.filter((a) => a.status !== 'ConcluÃ­do').length;
 
   const tabs = [
-    { id: 'dashboard' as const, label: 'Início', icon: LayoutDashboard },
+    { id: 'dashboard' as const, label: 'InÃ­cio', icon: LayoutDashboard },
     { id: 'kanban' as const, label: 'Quadro', icon: Kanban, badge: activeCount },
     { id: 'novo' as const, label: 'Novo', icon: PlusCircle, isCenter: true },
-    { id: 'bot' as const, label: 'Robô IA', icon: Bot, badge: conversas.length },
+    { id: 'bot' as const, label: 'RobÃ´ IA', icon: Bot, badge: conversas.length },
     { id: 'atendimentos' as const, label: 'Clientes', icon: FileText, badge: atendimentos.length },
   ];
 
@@ -85,7 +85,7 @@ const MainContent: React.FC = () => {
       {activeView === 'bot' && <WhatsAppBotView />}
       {activeView === 'config' && <ConfiguracoesView />}
 
-      {/* Global Modals */}
+      {/* Modais Globais */}
       <AtendimentoDetailModal />
       <WhatsAppModal />
       <ToastContainer />

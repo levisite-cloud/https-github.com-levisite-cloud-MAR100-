@@ -47,7 +47,7 @@ export const AtendimentosListView: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState('');
   const [sortBy, setSortBy] = useState<'data-desc' | 'data-asc' | 'valor-desc' | 'valor-asc' | 'nome-asc'>('data-desc');
 
-  // Filter and Sort
+  // Filtrar e Ordenar
   const filtered = atendimentos.filter((a) => {
     const q = searchTerm.toLowerCase();
     const matchText =

@@ -50,7 +50,7 @@ export const AtendimentoDetailModal: React.FC = () => {
 
   const atendimento = atendimentos.find((a) => a.id === selectedAtendimentoId);
 
-  // Form State inside Modal
+  // Estado do Formulário dentro do Modal
   const [status, setStatus] = useState<StatusAtendimento>('Novo Atendimento');
   const [prioridade, setPrioridade] = useState<PrioridadeAtendimento>('Normal');
   const [responsavel, setResponsavel] = useState('');
@@ -84,7 +84,7 @@ export const AtendimentoDetailModal: React.FC = () => {
 
   if (!selectedAtendimentoId || !atendimento) return null;
 
-  // Calculate totals
+  // Calcular totais
   const subtotalItens = itens.reduce((acc, it) => acc + (it.quantidade || 0) * (it.valorUnit || 0), 0);
   const totalFinal = Math.max(0, subtotalItens - (desconto || 0));
 
@@ -220,7 +220,7 @@ export const AtendimentoDetailModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
       <div className="bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-800 w-full max-w-[96vw] md:max-w-4xl lg:max-w-5xl max-h-[94vh] flex flex-col overflow-hidden my-auto">
-        {/* Header */}
+        {/* Cabeçalho */}
         <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-zinc-800 bg-zinc-850 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-amber-400 text-zinc-950">
@@ -245,9 +245,9 @@ export const AtendimentoDetailModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Modal Scrollable Content */}
+        {/* Conteúdo com rolagem do Modal */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 text-zinc-200">
-          {/* Status Progression Banner */}
+          {/* Banner de Progressão de Status */}
           <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-850 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">

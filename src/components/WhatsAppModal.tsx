@@ -32,7 +32,7 @@ export const WhatsAppModal: React.FC = () => {
 
   const { atendimento } = whatsAppModalData;
 
-  // Generate Google Calendar Link for visit or installation
+  // Gerar link do Google Agenda para visita ou instalação
   const googleCalendarUrl =
     selectedType === 'visita' || selectedType === 'instalacao'
       ? generateGoogleCalendarUrl(atendimento, empresa, selectedType)
@@ -59,7 +59,7 @@ export const WhatsAppModal: React.FC = () => {
     }
   );
 
-  // Extract raw text to copy
+  // Extrair texto bruto para copiar
   const urlObj = new URL(link);
   const rawText = urlObj.searchParams.get('text') || '';
 
