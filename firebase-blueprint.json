@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "Atendimento": {
+      "title": "Atendimento",
+      "description": "Registro de atendimento, orçamento e produção de marmoraria",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "ID numérico sequencial" },
+        "nome": { "type": "string", "description": "Nome do cliente" },
+        "telefone": { "type": "string", "description": "Telefone ou WhatsApp do cliente" },
+        "email": { "type": "string", "description": "Email do cliente" },
+        "cpfCnpj": { "type": "string", "description": "CPF ou CNPJ do cliente" },
+        "cep": { "type": "string", "description": "CEP da obra/entrega" },
+        "endereco": { "type": "string", "description": "Endereço completo" },
+        "numero": { "type": "string", "description": "Número do imóvel" },
+        "complemento": { "type": "string", "description": "Complemento" },
+        "bairro": { "type": "string", "description": "Bairro" },
+        "cidade": { "type": "string", "description": "Cidade" },
+        "estado": { "type": "string", "description": "Estado / UF" },
+        "tipoServico": { "type": "string", "description": "Tipo do serviço" },
+        "tipoMaterial": { "type": "string", "description": "Material ou pedra" },
+        "status": { "type": "string", "description": "Status no kanban" },
+        "prioridade": { "type": "string", "description": "Prioridade do atendimento" },
+        "dataVisita": { "type": "string", "description": "Data agendada para visita" },
+        "dataPrevista": { "type": "string", "description": "Data prevista de entrega" },
+        "orcamento": { "type": "string", "description": "Valor total formatado" },
+        "entradaSinal": { "type": "string", "description": "Sinal pago" },
+        "saldoRestante": { "type": "string", "description": "Saldo a pagar" },
+        "validadeOrcamento": { "type": "string", "description": "Validade do orçamento" },
+        "condicoesPagamento": { "type": "string", "description": "Condições de pagamento" },
+        "itensOrcamento": { "type": "array", "description": "Lista de itens detalhados do orçamento" },
+        "obs": { "type": "string", "description": "Observações gerais" },
+        "criadoEm": { "type": "string", "description": "Data e hora de criação ISO" },
+        "atualizadoEm": { "type": "string", "description": "Data e hora de atualização ISO" }
+      },
+      "required": ["id", "nome", "telefone", "tipoServico", "tipoMaterial", "status", "criadoEm"]
+    },
+    "EmpresaConfig": {
+      "title": "EmpresaConfig",
+      "description": "Configurações da empresa de marmoraria",
+      "type": "object",
+      "properties": {
+        "nome": { "type": "string", "description": "Razão social ou nome fantasia" },
+        "cnpj": { "type": "string", "description": "CNPJ da empresa" },
+        "tel": { "type": "string", "description": "Telefone fixo ou comercial" },
+        "whatsapp": { "type": "string", "description": "WhatsApp comercial" },
+        "email": { "type": "string", "description": "E-mail de contato" },
+        "slogan": { "type": "string", "description": "Slogan da marmoraria" },
+        "endereco": { "type": "string", "description": "Endereço físico" },
+        "horario": { "type": "string", "description": "Horário de funcionamento" },
+        "site": { "type": "string", "description": "Website institucional" },
+        "instagram": { "type": "string", "description": "Perfil do Instagram" },
+        "pixKey": { "type": "string", "description": "Chave PIX padrão" },
+        "obs": { "type": "string", "description": "Informações e anotações adicionais" },
+        "logo": { "type": "string", "description": "URL ou base64 do logotipo" },
+        "cor": { "type": "string", "description": "Cor primária de destaque" },
+        "termosPadrao": { "type": "string", "description": "Termos de garantia e condições comerciais" }
+      },
+      "required": ["nome", "tel", "endereco"]
+    }
+  },
+  "firestore": {
+    "/atendimentos/{atendimentoId}": {
+      "schema": "#/entities/Atendimento",
+      "description": "Coleção com os atendimentos e pedidos da marmoraria"
+    },
+    "/empresa/{configId}": {
+      "schema": "#/entities/EmpresaConfig",
+      "description": "Documento de configuração e dados da marmoraria"
+    }
+  }
+}

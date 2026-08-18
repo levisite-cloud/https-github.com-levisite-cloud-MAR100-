@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
@@ -6,14 +6,13 @@ import { KanbanView } from './components/KanbanView';
 import { AtendimentosListView } from './components/AtendimentosListView';
 import { NovoAtendimentoView } from './components/NovoAtendimentoView';
 import { ConfiguracoesView } from './components/ConfiguracoesView';
-
 import { AtendimentoDetailModal } from './components/AtendimentoDetailModal';
-
+import { WhatsAppModal } from './components/WhatsAppModal';
 import { ToastContainer } from './components/ToastContainer';
-import { LayoutDashboard, Kanban, FileText, PlusCircle, Settings, Bot } from 'lucide-react';
+import { LayoutDashboard, Kanban, FileText, PlusCircle, Settings } from 'lucide-react';
 
 const MobileBottomNav: React.FC = () => {
-  const { activeView, setActiveView, atendimentos, empresa, conversas } = useApp();
+  const { activeView, setActiveView, atendimentos, empresa } = useApp();
   const activeCount = atendimentos.filter((a) => a.status !== 'Concluído').length;
 
   const tabs = [
@@ -21,6 +20,7 @@ const MobileBottomNav: React.FC = () => {
     { id: 'kanban' as const, label: 'Quadro', icon: Kanban, badge: activeCount },
     { id: 'novo' as const, label: 'Novo', icon: PlusCircle, isCenter: true },
     { id: 'atendimentos' as const, label: 'Clientes', icon: FileText, badge: atendimentos.length },
+    { id: 'config' as const, label: 'Ajustes', icon: Settings },
   ];
 
   return (
@@ -81,16 +81,16 @@ const MainContent: React.FC = () => {
       {activeView === 'kanban' && <KanbanView />}
       {activeView === 'atendimentos' && <AtendimentosListView />}
       {activeView === 'novo' && <NovoAtendimentoView />}
-      
       {activeView === 'config' && <ConfiguracoesView />}
 
-      {/* Modais Globais */}
+      {/* Global Modals */}
       <AtendimentoDetailModal />
-      
+      <WhatsAppModal />
       <ToastContainer />
     </main>
   );
 };
+
 
 export default function App() {
   return (

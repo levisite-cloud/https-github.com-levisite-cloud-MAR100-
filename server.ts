@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 
@@ -8,12 +8,12 @@ async function startServer() {
 
   app.use(express.json());
 
-  // 1. Verificação de saúde do servidor
+  // API Health check route
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
 
-  // 2. Servidor de desenvolvimento Vite ou arquivos estáticos
+  // Vite dev server or static files
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -29,7 +29,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(\🚀 MAR100 Marmoraria Server rodando em http://0.0.0.0:\\);
+    console.log(`🚀 Sistema Marmoraria rodando em http://0.0.0.0:${PORT}`);
   });
 }
 

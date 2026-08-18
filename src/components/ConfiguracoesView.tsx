@@ -20,9 +20,18 @@ import {
   Database,
   ShieldAlert,
   X,
+  Copy,
+  ExternalLink,
+  Check,
+  Server,
+  Cloud,
+  Layers,
+  Code2,
+  GitBranch,
 } from 'lucide-react';
 import { maskCpfCnpj, maskPhone } from '../utils/formatters';
 import { DEFAULT_EMPRESA_CONFIG } from '../data/initialData';
+import { testSupabaseConnection } from '../lib/supabase';
 
 const CORES_PRESET = [
   { label: 'Azul Real', hex: '#0052cc' },
@@ -37,8 +46,93 @@ const CORES_PRESET = [
   { label: 'Teal Moderno', hex: '#0f766e' },
 ];
 
+const SUPABASE_SQL_SCRIPT = `-- ==============================================================================
+-- SISTEMA DE GESTÃO DE MARMORARIA (MAR100) - SCHEMA DO SUPABASE (POSTGRESQL)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.atendimentos (
+    id BIGINT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    telefone TEXT NOT NULL,
+    email TEXT DEFAULT '',
+    cpf_cnpj TEXT DEFAULT '',
+    cep TEXT DEFAULT '',
+    logradouro TEXT DEFAULT '',
+    numero TEXT DEFAULT '',
+    complemento TEXT DEFAULT '',
+    bairro TEXT DEFAULT '',
+    cidade TEXT DEFAULT '',
+    estado TEXT DEFAULT '',
+    endereco TEXT DEFAULT '',
+    servico TEXT NOT NULL,
+    material TEXT NOT NULL,
+    acabamento TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'Novo Atendimento',
+    prioridade TEXT DEFAULT 'Normal',
+    data_prevista TEXT DEFAULT '',
+    hora_prevista TEXT DEFAULT '',
+    data_medicao TEXT DEFAULT '',
+    data_instalacao TEXT DEFAULT '',
+    responsavel TEXT DEFAULT '',
+    orcamento TEXT DEFAULT 'R$ 0,00',
+    desconto NUMERIC DEFAULT 0,
+    validade_orcamento TEXT DEFAULT '15 dias',
+    condicoes_pagamento TEXT DEFAULT 'À vista ou 10x no cartão',
+    itens_orcamento JSONB DEFAULT '[]'::jsonb,
+    obs TEXT DEFAULT '',
+    criado_em TIMESTAMPTZ DEFAULT NOW(),
+    atualizado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.empresa_config (
+    id TEXT PRIMARY KEY DEFAULT 'default',
+    nome TEXT NOT NULL DEFAULT 'Marmoraria Imperial Arte em Pedras',
+    cnpj TEXT DEFAULT '',
+    tel TEXT DEFAULT '',
+    whatsapp TEXT DEFAULT '',
+    email TEXT DEFAULT '',
+    slogan TEXT DEFAULT 'Excelência e sofisticação em granitos, mármores e quartzos nobres.',
+    endereco TEXT DEFAULT '',
+    horario TEXT DEFAULT 'Segunda a Sexta: 08:00 às 18:00 | Sábado: 08:00 às 12:00',
+    site TEXT DEFAULT '',
+    instagram TEXT DEFAULT '',
+    pix_key TEXT DEFAULT '',
+    obs TEXT DEFAULT '',
+    logo TEXT DEFAULT '',
+    cor TEXT DEFAULT '#eab308',
+    termos_padrao TEXT DEFAULT '',
+    atualizado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.atendimentos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.empresa_config ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Acesso Atendimentos" ON public.atendimentos;
+CREATE POLICY "Acesso Atendimentos" ON public.atendimentos FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Acesso Empresa" ON public.empresa_config;
+CREATE POLICY "Acesso Empresa" ON public.empresa_config FOR ALL USING (true) WITH CHECK (true);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.atendimentos;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.empresa_config;`;
+
 export const ConfiguracoesView: React.FC = () => {
-  const { atendimentos, empresa, updateEmpresa, resetToDemoData, clearAllData, exportData, importData, addToast } = useApp();
+  const {
+    atendimentos,
+    empresa,
+    updateEmpresa,
+    resetToDemoData,
+    clearAllData,
+    exportData,
+    importData,
+    addToast,
+    isSupabaseActive,
+    activeDbProvider,
+    supabaseUrl: currentSupabaseUrl,
+    supabaseAnonKey: currentSupabaseKey,
+    saveSupabaseCredentials,
+    disconnectSupabase,
+    syncAllToSupabase,
+  } = useApp();
 
   const [formData, setFormData] = useState({ ...empresa });
   const [logoPreview, setLogoPreview] = useState(empresa.logo || '');
@@ -48,6 +142,14 @@ export const ConfiguracoesView: React.FC = () => {
   const [confirmCheckbox, setConfirmCheckbox] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
+
+  // Supabase states
+  const [inputUrl, setInputUrl] = useState(currentSupabaseUrl || '');
+  const [inputKey, setInputKey] = useState(currentSupabaseKey || '');
+  const [isConnectingSupabase, setIsConnectingSupabase] = useState(false);
+  const [isSyncingSupabase, setIsSyncingSupabase] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
+  const [showSqlCode, setShowSqlCode] = useState(false);
 
   const handleExecuteReset = () => {
     if (!confirmCheckbox) {
@@ -80,7 +182,6 @@ export const ConfiguracoesView: React.FC = () => {
 
     setIsSearchingCnpj(true);
     try {
-      // Caso específico/demonstração para 34.567.890/0001-23 solicitado
       if (cleanCnpj === '34567890000123') {
         await new Promise((resolve) => setTimeout(resolve, 350));
         setFormData((prev) => ({
@@ -93,22 +194,17 @@ export const ConfiguracoesView: React.FC = () => {
           slogan: 'Excelência e Precisão em Mármores, Granitos e Quartzos Nobres',
           endereco: 'Av. das Nações Unidas, 12901 - Brooklin Paulista, São Paulo - SP, 04578-000',
         }));
-        addToast(
-          'CNPJ Encontrado!',
-          'Informações da Marmoraria Imperial preenchidas com sucesso.',
-          'success'
-        );
+        addToast('CNPJ Encontrado!', 'Informações da Marmoraria Imperial preenchidas com sucesso.', 'success');
         return;
       }
 
-      // Consulta pública via BrasilAPI para CNPJs reais
       const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
       if (response.ok) {
         const data = await response.json();
         const nomeEmpresa = data.nome_fantasia || data.razao_social || formData.nome;
         const telefone = data.ddd_telefone_1 ? maskPhone(data.ddd_telefone_1) : formData.tel;
         const emailEmpresa = data.email ? data.email.toLowerCase() : formData.email;
-        
+
         const logradouro = data.descricao_tipo_de_logradouro
           ? `${data.descricao_tipo_de_logradouro} ${data.logradouro}`
           : data.logradouro;
@@ -118,14 +214,8 @@ export const ConfiguracoesView: React.FC = () => {
         const cidadeUf = data.municipio ? `${data.municipio}/${data.uf}` : '';
         const cep = data.cep ? `CEP: ${data.cep}` : '';
 
-        const enderecoCompleto = [logradouro, numero, complemento, bairro, cidadeUf, cep]
-          .filter(Boolean)
-          .join(' ')
-          .trim();
-
-        const sloganAtividade = data.cnae_fiscal_descricao
-          ? `Especialistas em ${data.cnae_fiscal_descricao}`
-          : formData.slogan;
+        const enderecoCompleto = [logradouro, numero, complemento, bairro, cidadeUf, cep].filter(Boolean).join(' ').trim();
+        const sloganAtividade = data.cnae_fiscal_descricao ? `Especialistas em ${data.cnae_fiscal_descricao}` : formData.slogan;
 
         setFormData((prev) => ({
           ...prev,
@@ -138,11 +228,7 @@ export const ConfiguracoesView: React.FC = () => {
           slogan: sloganAtividade || prev.slogan,
         }));
 
-        addToast(
-          'CNPJ Localizado!',
-          `Dados da empresa "${nomeEmpresa}" carregados automaticamente.`,
-          'success'
-        );
+        addToast('CNPJ Localizado!', `Dados da empresa "${nomeEmpresa}" carregados automaticamente.`, 'success');
       } else {
         addToast('CNPJ não encontrado', 'Não foi possível consultar os dados na Receita Federal.', 'warning');
       }
@@ -228,6 +314,45 @@ export const ConfiguracoesView: React.FC = () => {
     reader.readAsText(file);
   };
 
+  // Supabase Actions
+  const handleConnectSupabase = async () => {
+    if (!inputUrl.trim() || !inputKey.trim()) {
+      addToast('Campos Obrigatórios', 'Preencha o Project URL e a Anon Key do Supabase.', 'warning');
+      return;
+    }
+
+    setIsConnectingSupabase(true);
+    try {
+      const result = await saveSupabaseCredentials(inputUrl.trim(), inputKey.trim());
+      if (!result.success) {
+        addToast('Falha na Conexão', result.message, 'error');
+      }
+    } catch (e: any) {
+      addToast('Erro', e.message || 'Falha ao conectar com o Supabase.', 'error');
+    } finally {
+      setIsConnectingSupabase(false);
+    }
+  };
+
+  const handleSyncSupabase = async () => {
+    setIsSyncingSupabase(true);
+    try {
+      const res = await syncAllToSupabase();
+      if (!res.success) {
+        addToast('Aviso', res.message, 'error');
+      }
+    } finally {
+      setIsSyncingSupabase(false);
+    }
+  };
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(SUPABASE_SQL_SCRIPT);
+    setCopiedSql(true);
+    addToast('SQL Copiado!', 'Script SQL pronto para ser executado no Supabase SQL Editor.', 'success');
+    setTimeout(() => setCopiedSql(false), 3000);
+  };
+
   return (
     <div className="w-full max-w-6xl xl:max-w-7xl mx-auto space-y-6 animate-fade-in pb-16">
       {/* Header */}
@@ -237,9 +362,9 @@ export const ConfiguracoesView: React.FC = () => {
             <Building2 className="w-3.5 h-3.5" />
             <span>Configurações & Personalização</span>
           </div>
-          <h1 className="text-xl font-black text-amber-400">Perfil da Empresa & Sistema</h1>
+          <h1 className="text-xl font-black text-amber-400">Perfil da Empresa & Banco de Dados</h1>
           <p className="text-xs text-zinc-400">
-            Personalize a identidade visual, dados comerciais que constam nos orçamentos em PDF e faça backup do sistema.
+            Personalize a identidade visual, dados comerciais dos orçamentos e gerencie a conexão com o banco de dados em nuvem.
           </p>
         </div>
 
@@ -252,10 +377,157 @@ export const ConfiguracoesView: React.FC = () => {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Commercial Details & Terms */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Commercial Details & Supabase Card */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Dados da Empresa */}
+          {/* ========================================================================= */}
+          {/* PAINEL DE BANCO DE DADOS SUPABASE / POSTGRESQL */}
+          {/* ========================================================================= */}
+          <div className="bg-zinc-900 rounded-2xl p-6 border border-emerald-500/30 shadow-xl space-y-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-0 pointer-events-none" />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4 relative z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-zinc-100 flex items-center gap-2">
+                    <span>Banco de Dados Supabase (PostgreSQL)</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                        isSupabaseActive
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                      }`}
+                    >
+                      {isSupabaseActive ? 'Supabase Conectado' : 'Nuvem Padrão Ativa'}
+                    </span>
+                  </h2>
+                  <p className="text-[11px] text-zinc-400">
+                    Conecte seu próprio projeto Supabase para sincronização direta com seu repositório GitHub.
+                  </p>
+                </div>
+              </div>
+
+              {isSupabaseActive && (
+                <button
+                  type="button"
+                  onClick={disconnectSupabase}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-rose-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer self-start sm:self-auto"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Desconectar Supabase</span>
+                </button>
+              )}
+            </div>
+
+            {/* Inputs de Conexão */}
+            <div className="space-y-3 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-300 mb-1">
+                    Project URL (Supabase API)
+                  </label>
+                  <input
+                    type="text"
+                    value={inputUrl}
+                    onChange={(e) => setInputUrl(e.target.value)}
+                    placeholder="https://seu-projeto.supabase.co"
+                    className="w-full text-xs font-mono bg-zinc-800/90 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-300 mb-1">
+                    Anon / Public Key
+                  </label>
+                  <input
+                    type="password"
+                    value={inputKey}
+                    onChange={(e) => setInputKey(e.target.value)}
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    className="w-full text-xs font-mono bg-zinc-800/90 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Botões de Ação Supabase */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={isConnectingSupabase}
+                  onClick={handleConnectSupabase}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                >
+                  {isConnectingSupabase ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Testando Conexão...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{isSupabaseActive ? 'Atualizar Conexão Supabase' : 'Testar e Conectar Supabase'}</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopySql}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-750 text-zinc-200 text-xs font-bold rounded-xl border border-zinc-700 transition-colors cursor-pointer"
+                >
+                  {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-400" />}
+                  <span>{copiedSql ? 'Script SQL Copiado!' : 'Copiar Script SQL do Supabase'}</span>
+                </button>
+
+                {isSupabaseActive && (
+                  <button
+                    type="button"
+                    disabled={isSyncingSupabase}
+                    onClick={handleSyncSupabase}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-750 text-emerald-400 text-xs font-bold rounded-xl border border-emerald-500/30 transition-colors cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncingSupabase ? 'animate-spin' : ''}`} />
+                    <span>Sincronizar Todos os Pedidos</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowSqlCode(!showSqlCode)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-zinc-400 hover:text-zinc-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer ml-auto"
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                  <span>{showSqlCode ? 'Ocultar SQL' : 'Visualizar SQL'}</span>
+                </button>
+              </div>
+
+              {/* Bloco de Código SQL Expansível */}
+              {showSqlCode && (
+                <div className="mt-3 p-3 bg-zinc-950 rounded-xl border border-zinc-800 font-mono text-[11px] text-zinc-300 overflow-x-auto max-h-56">
+                  <pre>{SUPABASE_SQL_SCRIPT}</pre>
+                </div>
+              )}
+
+              {/* Guia Rápido Passo a Passo */}
+              <div className="bg-zinc-850/80 rounded-xl p-3.5 border border-zinc-800 space-y-2 text-xs text-zinc-400">
+                <div className="font-bold text-zinc-200 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Como configurar seu Supabase com o sistema:</span>
+                </div>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] text-zinc-400 leading-relaxed">
+                  <li>Crie um projeto grátis no painel oficial do <strong className="text-zinc-200">supabase.com</strong>.</li>
+                  <li>Clique em <strong className="text-zinc-200">SQL Editor</strong>, clique no botão <em>"Copiar Script SQL"</em> acima, cole e clique em <strong className="text-emerald-400">RUN</strong>.</li>
+                  <li>No menu <strong className="text-zinc-200">Project Settings &gt; API</strong>, copie a <strong className="text-zinc-200">Project URL</strong> e a <strong className="text-zinc-200">anon public key</strong>.</li>
+                  <li>Cole nos campos acima e clique em <strong className="text-emerald-400">Testar e Conectar</strong>. Seus clientes e pedidos ficarão salvos e sincronizados automaticamente!</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          {/* Dados Cadastrais */}
           <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
             <h2 className="text-sm font-black text-amber-400 flex items-center gap-2 border-b border-zinc-800 pb-3">
               <Building2 className="w-4 h-4 text-amber-400" />
@@ -304,24 +576,43 @@ export const ConfiguracoesView: React.FC = () => {
                     )}
                   </button>
                 </div>
-                <p className="text-[10px] text-zinc-400 mt-1">
-                  Ex: digite <strong className="text-amber-400 cursor-pointer" onClick={() => handleCnpjInputChange('34.567.890/0001-23')}>34.567.890/0001-23</strong> para preenchimento instantâneo.
-                </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1">Telefone</label>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">Chave PIX Oficial (Impresso no PDF)</label>
+                <input
+                  type="text"
+                  value={formData.pixKey || ''}
+                  onChange={(e) => handleInputChange('pixKey', e.target.value)}
+                  placeholder="Ex: CNPJ, Telefone, E-mail ou Chave Aleatória"
+                  className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">WhatsApp Comercial (Disparos Automáticos)</label>
+                <input
+                  type="text"
+                  value={formData.whatsapp || ''}
+                  onChange={(e) => handleInputChange('whatsapp', maskPhone(e.target.value))}
+                  placeholder="(11) 98765-4321"
+                  className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">Telefone Fixo / Comercial</label>
                 <input
                   type="text"
                   value={formData.tel}
                   onChange={(e) => handleInputChange('tel', maskPhone(e.target.value))}
-                  placeholder="(11) 99999-0000"
+                  placeholder="(11) 3456-7890"
                   className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1">E-mail Comercial</label>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">E-mail de Contato Comercial</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -332,120 +623,136 @@ export const ConfiguracoesView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1">Chave PIX para Recebimentos</label>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">Instagram (@perfil)</label>
                 <input
                   type="text"
-                  value={formData.pixKey || ''}
-                  onChange={(e) => handleInputChange('pixKey', e.target.value)}
-                  placeholder="CNPJ, E-mail ou Telefone"
+                  value={formData.instagram || ''}
+                  onChange={(e) => handleInputChange('instagram', e.target.value)}
+                  placeholder="@marmorariaimperial"
                   className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-zinc-300 mb-1">Slogan / Frase de Apresentação</label>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">Slogan / Especialidade da Empresa</label>
                 <input
                   type="text"
                   value={formData.slogan}
                   onChange={(e) => handleInputChange('slogan', e.target.value)}
-                  placeholder="Ex: Excelência e Precisão em Mármores, Granitos e Quartzos"
+                  placeholder="Ex: Mármores nobres, granitos selecionados e acabamento de alto padrão."
                   className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-zinc-300 mb-1">Endereço Comercial da Fábrica / Showroom</label>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">Endereço Completo & Cidade</label>
                 <input
                   type="text"
                   value={formData.endereco}
                   onChange={(e) => handleInputChange('endereco', e.target.value)}
-                  placeholder="Rua, número, bairro — Cidade/UF"
+                  placeholder="Av. dos Mármores, 1500 - Galpão 4, São Paulo - SP"
+                  className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-zinc-300 mb-1">Horário de Atendimento da Loja / Fábrica</label>
+                <input
+                  type="text"
+                  value={formData.horario}
+                  onChange={(e) => handleInputChange('horario', e.target.value)}
+                  placeholder="Segunda a Sexta: 08:00 às 18:00 | Sábado: 08:00 às 12:00"
                   className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* Termos do Orçamento em PDF */}
+          {/* Termos e Condições Padrão */}
           <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
             <h2 className="text-sm font-black text-amber-400 flex items-center gap-2 border-b border-zinc-800 pb-3">
               <FileText className="w-4 h-4 text-amber-400" />
-              <span>2. Termos Comerciais & Garantia no PDF</span>
+              <span>2. Termos de Garantia e Condições Comerciais (Impressos no PDF)</span>
             </h2>
 
             <div>
               <label className="block text-xs font-bold text-zinc-300 mb-1">
-                Condições Gerais Impressas no Orçamento
+                Termos Comerciais Padrão para Propostas & Orçamentos
               </label>
               <textarea
-                rows={4}
-                value={formData.termosPadrao}
+                rows={5}
+                value={formData.termosPadrao || ''}
                 onChange={(e) => handleInputChange('termosPadrao', e.target.value)}
-                placeholder="Termos de garantia, prazo de execução, formas de pagamento..."
+                placeholder="Insira as cláusulas de garantia, tolerância de medidas e prazos de instalação..."
                 className="w-full text-xs bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400 focus:outline-none leading-relaxed"
               />
             </div>
           </div>
         </div>
 
-        {/* Right 1 Col: Logo, Theme Color, Live Preview & Data Backup */}
+        {/* Right Column: Visual Theme & Backup */}
         <div className="space-y-6">
-          {/* Logo Upload */}
+          {/* Logo Upload Card */}
           <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
             <h2 className="text-sm font-black text-amber-400 flex items-center gap-2 border-b border-zinc-800 pb-3">
               <ImageIcon className="w-4 h-4 text-amber-400" />
               <span>Logotipo da Empresa</span>
             </h2>
 
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-zinc-700 hover:border-amber-400 rounded-2xl p-4 bg-zinc-850 hover:bg-zinc-800 cursor-pointer transition-all flex flex-col items-center justify-center min-h-[120px] text-center"
-            >
+            <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-2xl bg-zinc-850/50 hover:bg-zinc-850 transition-colors">
               {logoPreview ? (
-                <div className="space-y-2">
+                <div className="relative group">
                   <img
                     src={logoPreview}
-                    alt="Logo Preview"
-                    className="max-h-20 max-w-full object-contain mx-auto rounded-lg shadow-sm"
+                    alt="Logo preview"
+                    className="max-h-28 max-w-full object-contain rounded-lg p-1 bg-zinc-900 border border-zinc-700"
                   />
-                  <p className="text-[11px] text-amber-400 font-bold">Clique para trocar a imagem</p>
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    className="absolute -top-2 -right-2 p-1.5 bg-rose-600 text-white rounded-full shadow-lg hover:bg-rose-500 transition-colors cursor-pointer"
+                    title="Remover logotipo"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ) : (
-                <div className="space-y-1 text-zinc-400">
-                  <Upload className="w-6 h-6 mx-auto text-zinc-500" />
-                  <p className="text-xs font-bold text-zinc-200">Clique para enviar logotipo</p>
-                  <p className="text-[10px] text-zinc-500">PNG, JPG ou SVG (máx 2.5 MB)</p>
+                <div className="text-center space-y-2 py-4">
+                  <div className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+                    <ImageIcon className="w-6 h-6" />
+                  </div>
+                  <div className="text-xs font-bold text-zinc-300">Nenhum logotipo selecionado</div>
+                  <div className="text-[11px] text-zinc-500">Formatos: PNG, JPG ou WEBP (Máx. 2.5MB)</div>
                 </div>
               )}
-            </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleLogoUpload(e.target.files?.[0])}
-            />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+              />
 
-            {logoPreview && (
               <button
                 type="button"
-                onClick={handleRemoveLogo}
-                className="w-full text-xs font-bold text-rose-400 hover:bg-rose-500/10 p-2 rounded-xl border border-zinc-800 transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-800 hover:bg-zinc-750 text-amber-400 text-xs font-bold rounded-xl border border-zinc-700 transition-colors cursor-pointer"
               >
-                🗑️ Remover Logotipo
+                <Upload className="w-3.5 h-3.5" />
+                <span>{logoPreview ? 'Trocar Logotipo' : 'Selecionar Imagem'}</span>
               </button>
-            )}
+            </div>
           </div>
 
-          {/* Theme Color Palette */}
+          {/* Color Presets */}
           <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
             <h2 className="text-sm font-black text-amber-400 flex items-center gap-2 border-b border-zinc-800 pb-3">
               <Palette className="w-4 h-4 text-amber-400" />
-              <span>Cor Destaque do Sistema</span>
+              <span>Cor Primária do Sistema</span>
             </h2>
 
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-2.5">
               {CORES_PRESET.map((c) => (
                 <button
                   key={c.hex}
@@ -575,7 +882,7 @@ export const ConfiguracoesView: React.FC = () => {
             </div>
           </div>
         </div>
-      </form>
+      </div>
 
       {/* Modal de Confirmação para Zerar Base de Dados */}
       {showResetModal && (
@@ -614,7 +921,7 @@ export const ConfiguracoesView: React.FC = () => {
             {/* Scope Selection */}
             <div className="space-y-2">
               <label className="block text-xs font-bold text-zinc-300">Escolha o nível de limpeza:</label>
-              
+
               <label
                 onClick={() => setResetScope('atendimentos')}
                 className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${

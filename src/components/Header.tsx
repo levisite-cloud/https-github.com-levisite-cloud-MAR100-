@@ -10,11 +10,20 @@ import {
   Menu,
   X,
   Sparkles,
-  Bot,
+  Database,
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const { activeView, setActiveView, empresa, atendimentos, searchTerm, setSearchTerm, botStatus, conversas } = useApp();
+  const {
+    activeView,
+    setActiveView,
+    empresa,
+    atendimentos,
+    searchTerm,
+    setSearchTerm,
+    isSupabaseActive,
+    cloudSynced,
+  } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const activeOrdersCount = atendimentos.filter((a) => a.status !== 'Concluído').length;
@@ -42,9 +51,7 @@ export const Header: React.FC = () => {
                 className="w-10 h-10 rounded-xl object-contain bg-zinc-800 border border-zinc-700 p-0.5"
               />
             ) : (
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-950 bg-amber-400 font-black text-base shadow-sm shadow-amber-400/20"
-              >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-950 bg-amber-400 font-black text-base shadow-sm shadow-amber-400/20">
                 {empresa.nome ? empresa.nome.substring(0, 2).toUpperCase() : 'MP'}
               </div>
             )}
@@ -52,11 +59,33 @@ export const Header: React.FC = () => {
               <div className="font-extrabold text-base tracking-tight text-amber-400 leading-tight group-hover:text-amber-300 transition-colors truncate max-w-[180px] sm:max-w-xs flex items-center gap-1.5">
                 <span>{empresa.nome || 'Marmoraria Fácil'}</span>
               </div>
-              <div className="text-xs text-zinc-400 truncate max-w-[160px] sm:max-w-xs font-normal">
-                {empresa.slogan || 'Sistema de Atendimento & Orçamentos'}
+              <div className="text-xs text-zinc-400 truncate max-w-[160px] sm:max-w-xs font-normal flex items-center gap-1.5">
+                <span>{empresa.slogan || 'Sistema de Atendimento & Orçamentos'}</span>
               </div>
             </div>
           </div>
+
+          {/* Database Status Indicator */}
+          <button
+            type="button"
+            onClick={() => setActiveView('config')}
+            title="Clique para configurar o banco de dados"
+            className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 transition-colors cursor-pointer"
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isSupabaseActive
+                  ? 'bg-emerald-400 animate-pulse'
+                  : cloudSynced
+                  ? 'bg-amber-400 animate-pulse'
+                  : 'bg-zinc-500'
+              }`}
+            />
+            <Database className="w-3 h-3 text-zinc-400" />
+            <span className={isSupabaseActive ? 'text-emerald-400 font-semibold' : 'text-zinc-300'}>
+              {isSupabaseActive ? 'Supabase Sincronizado' : 'Banco em Nuvem Ativo'}
+            </span>
+          </button>
 
           {/* Barra de Busca Simples */}
           <div className="hidden lg:flex items-center flex-1 max-w-sm mx-2">
@@ -80,7 +109,7 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Navegação Desktop Clara & Limpa */}
+          {/* Navegação Desktop */}
           <nav className="hidden md:flex items-center gap-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -176,7 +205,13 @@ export const Header: React.FC = () => {
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isActive ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-zinc-800 text-zinc-400'}`}>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        isActive
+                          ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                          : 'bg-zinc-800 text-zinc-400'
+                      }`}
+                    >
                       {item.badge}
                     </span>
                   )}
