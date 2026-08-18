@@ -85,7 +85,7 @@ export function generateGoogleCalendarUrl(
     isInstalacao ? 'ðŸšš INSTALAÃ‡ÃƒO DE MARMORARIA' : 'ðŸ“ VISITA TÃ‰CNICA / MEDIÃ‡ÃƒO',
     'â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•',
     `ðŸ‘¤ Cliente: ${atendimento.nome}`,
-    `ðŸ“ž WhatsApp / Tel: ${atendimento.telefone}`,
+    `ðŸ“ž Tel: ${atendimento.telefone}`,
     atendimento.email ? `âœ‰ï¸ E-mail: ${atendimento.email}` : '',
     `ðŸ› ï¸ ServiÃ§o: ${atendimento.servico}`,
     `ðŸª¨ Material / Pedra: ${atendimento.material}`,
@@ -95,7 +95,7 @@ export function generateGoogleCalendarUrl(
     atendimento.obs ? `ðŸ“ ObservaÃ§Ãµes: ${atendimento.obs}` : '',
     '',
     `ðŸ¢ Empresa: ${empresa.nome || 'Marmoraria'}`,
-    empresa.whatsapp ? `ðŸ“± WhatsApp Empresa: ${empresa.whatsapp}` : '',
+    empresa.whatsapp ? `ðŸ“± Tel Empresa: ${empresa.whatsapp}` : '',
     'â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•',
     'Agendado via Sistema de GestÃ£o de Marmoraria',
   ]

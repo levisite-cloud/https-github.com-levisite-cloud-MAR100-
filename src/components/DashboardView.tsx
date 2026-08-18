@@ -102,13 +102,7 @@ export const DashboardView: React.FC = () => {
 
           {/* Botões de Ação Rápida */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => setActiveView('bot')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
-            >
-              <Bot className="w-4 h-4 text-emerald-400" />
-              <span>🤖 Robô WhatsApp ({conversas.length})</span>
-            </button>
+            
             <button
               onClick={() => setActiveView('kanban')}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-200 hover:text-amber-400 border border-zinc-700/80 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer"

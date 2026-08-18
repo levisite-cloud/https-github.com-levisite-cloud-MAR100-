@@ -310,7 +310,7 @@ export const ConfiguracoesView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1">Telefone / WhatsApp</label>
+                <label className="block text-xs font-bold text-zinc-300 mb-1">Telefone</label>
                 <input
                   type="text"
                   value={formData.tel}

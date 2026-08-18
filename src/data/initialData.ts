@@ -4,7 +4,6 @@ export const DEFAULT_EMPRESA_CONFIG: EmpresaConfig = {
   nome: 'Marmoraria Imperial Arte em Pedras',
   cnpj: '34.567.890/0001-23',
   tel: '(11) 3456-7890',
-  whatsapp: '(11) 98765-4321',
   email: 'contato@marmorariaimperial.com.br',
   slogan: 'Excelência, Precisão e Arte em Mármores, Granitos e Quartzos',
   endereco: 'Av. dos Estados, 4500 — Parque Industrial — São Paulo/SP',
@@ -419,7 +418,7 @@ export const INITIAL_CONVERSAS: ConversaWhatsApp[] = [
       },
       {
         id: 'm-2',
-        remetente: 'bot',
+        remetente: 'atendente',
         texto: 'Olá, Mariana! 👋 Sim, somos especialistas nos melhores granitos pretos do mercado, como o Granito São Gabriel e o Preto Absoluto. Para qual ambiente seria seu projeto (cozinha, banheiro, área gourmet)?',
         horario: '14:18',
         statusEnvio: 'lido',
@@ -433,7 +432,7 @@ export const INITIAL_CONVERSAS: ConversaWhatsApp[] = [
       },
       {
         id: 'm-3-bot',
-        remetente: 'bot',
+        remetente: 'atendente',
         texto: 'Perfeito, Mariana! Fiz o cálculo prévio para a sua bancada de 2,20m x 0,60m (1,32m²) em Granito São Gabriel com corte de cooktop e acabamento boleado duplo:\n\n💎 Material: Granito São Gabriel Nobre\n📐 Área: 1,32 m²\n💰 Valor Estimado: R$ 2.450,00 (ou em até 10x sem juros no cartão)\n\nPodemos agendar uma visita técnica gratuita de medição no seu endereço para conferir o esquadro?',
         horario: '14:21',
         statusEnvio: 'lido',
@@ -481,7 +480,7 @@ export const INITIAL_CONVERSAS: ConversaWhatsApp[] = [
       },
       {
         id: 'm-5',
-        remetente: 'bot',
+        remetente: 'atendente',
         texto: 'Excelente escolha, Eng. Lucas! O Quartzo Calacatta Gold é a pedra mais cobiçada em projetos de alto padrão devido aos veios contínuos e porosidade nula. Qual a medida do vão?',
         horario: '13:31',
         statusEnvio: 'lido',
@@ -495,7 +494,7 @@ export const INITIAL_CONVERSAS: ConversaWhatsApp[] = [
       },
       {
         id: 'm-7',
-        remetente: 'bot',
+        remetente: 'atendente',
         texto: 'Maravilha! Com o corte em 45º (meia-esquadria invisível) e rampa removível para limpeza, fica em torno de R$ 3.800,00 instalado com garantia de 5 anos. Quer que eu agende a medição a laser no local?',
         horario: '13:36',
         statusEnvio: 'lido',
@@ -536,7 +535,7 @@ export const INITIAL_CONVERSAS: ConversaWhatsApp[] = [
       },
       {
         id: 'm-10',
-        remetente: 'bot',
+        remetente: 'atendente',
         texto: 'Bom dia, Juliana! Que projeto maravilhoso! Para ilhas gourmet recomendamos o Quartzito Mont Blanc ou Dekton, que suportam panelas quentes sem manchar. Você já tem a planta ou rascunho das medidas?',
         horario: '11:11',
         statusEnvio: 'lido',
@@ -556,7 +555,7 @@ export const INITIAL_CONVERSAS: ConversaWhatsApp[] = [
       },
       {
         id: 'm-12',
-        remetente: 'bot',
+        remetente: 'atendente',
         texto: '🔍 Foto da planta analisada com sucesso pela nossa Inteligência Visual!\n\nIdentifiquei:\n• Ilha central: 3,00m x 1,20m com cascata nas duas laterais (acabamento em 45º)\n• Vão para cuba dupla de embutir e cooktop de indução\n\nEstimativa em Quartzito Mont Blanc: R$ 8.900,00 com frete, corte a laser e instalação inclusos.',
         horario: '11:16',
         statusEnvio: 'lido',

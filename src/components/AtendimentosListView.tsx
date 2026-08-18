@@ -36,7 +36,6 @@ export const AtendimentosListView: React.FC = () => {
     atendimentos,
     setSelectedAtendimentoId,
     deleteAtendimento,
-    setWhatsAppModalData,
     setActiveView,
     empresa,
     addToast,
@@ -357,14 +356,7 @@ export const AtendimentosListView: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={(e) => handleWhatsApp(e, a)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 font-bold text-[11px] transition-colors cursor-pointer"
-                            title="Conversar no WhatsApp"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span>WhatsApp</span>
-                          </button>
+                          
                           <button
                             onClick={(e) => handlePrint(e, a)}
                             className="p-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-amber-400 border border-zinc-700 hover:bg-zinc-700 transition-colors cursor-pointer"
@@ -444,13 +436,7 @@ export const AtendimentosListView: React.FC = () => {
                   </div>
 
                   <div className="pt-2 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={(e) => handleWhatsApp(e, a)}
-                      className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold text-xs hover:bg-emerald-500/25 cursor-pointer"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>WhatsApp</span>
-                    </button>
+                    
                     <button
                       onClick={(e) => handlePrint(e, a)}
                       className="p-2 rounded-xl bg-zinc-800 text-zinc-300 hover:text-amber-400 border border-zinc-700 hover:bg-zinc-700 cursor-pointer"

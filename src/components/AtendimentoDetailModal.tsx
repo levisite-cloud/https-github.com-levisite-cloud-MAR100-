@@ -44,7 +44,6 @@ export const AtendimentoDetailModal: React.FC = () => {
     updateAtendimento,
     deleteAtendimento,
     empresa,
-    setWhatsAppModalData,
     addToast,
   } = useApp();
 
@@ -284,13 +283,7 @@ export const AtendimentoDetailModal: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-zinc-400" />
                 <span className="font-semibold text-zinc-200">{atendimento.telefone}</span>
-                <button
-                  onClick={() => setWhatsAppModalData({ atendimento, type: 'geral' })}
-                  className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-bold rounded text-[11px] transition-colors cursor-pointer"
-                >
-                  <MessageSquare className="w-3 h-3 text-emerald-400" />
-                  <span>WhatsApp</span>
-                </button>
+                
               </div>
               {atendimento.email && (
                 <div className="flex items-center gap-2">
@@ -666,13 +659,7 @@ export const AtendimentoDetailModal: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={() => setWhatsAppModalData({ atendimento, type: 'orcamento' })}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>WhatsApp</span>
-            </button>
+            
 
             <button
               onClick={handlePrintPDF}

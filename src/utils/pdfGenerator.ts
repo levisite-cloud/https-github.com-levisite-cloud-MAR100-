@@ -259,7 +259,7 @@ export function printOrcamentoPDF(atendimento: Atendimento, empresa: EmpresaConf
     <div class="section-title">1. Dados do Cliente e Obra</div>
     <div class="client-card">
       <div><span class="field-label">Cliente:</span> <span class="field-val" style="font-weight: 700;">${escapeHtml(atendimento.nome)}</span></div>
-      <div><span class="field-label">Telefone / WhatsApp:</span> <span class="field-val">${escapeHtml(atendimento.telefone)}</span></div>
+      <div><span class="field-label">Telefone:</span> <span class="field-val">${escapeHtml(atendimento.telefone)}</span></div>
       ${atendimento.email ? `<div><span class="field-label">E-mail:</span> <span class="field-val">${escapeHtml(atendimento.email)}</span></div>` : ''}
       ${atendimento.cpfCnpj ? `<div><span class="field-label">CPF / CNPJ:</span> <span class="field-val">${escapeHtml(atendimento.cpfCnpj)}</span></div>` : ''}
       <div style="grid-column: 1 / -1;"><span class="field-label">Endereço da Obra:</span> <span class="field-val">${escapeHtml(atendimento.endereco)}</span></div>

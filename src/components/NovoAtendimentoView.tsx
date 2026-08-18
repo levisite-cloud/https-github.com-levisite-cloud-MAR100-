@@ -391,7 +391,7 @@ export const NovoAtendimentoView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-zinc-300 mb-1">
-                Telefone / WhatsApp *
+                Telefone *
               </label>
               <input
                 type="text"

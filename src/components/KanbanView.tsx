@@ -25,7 +25,6 @@ export const KanbanView: React.FC = () => {
     atendimentos,
     updateAtendimentoStatus,
     setSelectedAtendimentoId,
-    setWhatsAppModalData,
     setActiveView,
     empresa,
     addToast,
@@ -284,14 +283,7 @@ export const KanbanView: React.FC = () => {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center gap-1">
-                              <button
-                                onClick={(e) => handleWhatsApp(e, a)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 font-bold text-[10px] transition-colors cursor-pointer"
-                                title="Enviar WhatsApp"
-                              >
-                                <MessageSquare className="w-3 h-3" />
-                                <span>WhatsApp</span>
-                              </button>
+                              
                               <button
                                 onClick={(e) => handlePrint(e, a)}
                                 className="p-1 rounded bg-zinc-800 text-zinc-300 hover:text-amber-400 border border-zinc-700 hover:bg-zinc-700 transition-colors cursor-pointer"

@@ -110,7 +110,7 @@ export interface ToastMessage {
   type: 'success' | 'error' | 'info' | 'warning';
 }
 
-export type ViewType = 'dashboard' | 'kanban' | 'atendimentos' | 'novo' | 'config' | 'bot';
+export type ViewType = 'dashboard' | 'kanban' | 'atendimentos' | 'novo' | 'config';
 
 export type BotConnectionStatus = 'disconnected' | 'pairing' | 'connected';
 
