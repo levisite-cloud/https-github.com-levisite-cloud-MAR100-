@@ -152,37 +152,107 @@ export const ConfiguracoesView: React.FC = () => {
   const [copiedSql, setCopiedSql] = useState(false);
   const [showSqlCode, setShowSqlCode] = useState(false);
 
-  // WhatsApp Bot states
-  const [botStatus, setBotStatus] = useState<{ isReady: boolean; hasQr: boolean; qrCode: string | null; number: string | null; name: string | null }>({ isReady: false, hasQr: false, qrCode: null, number: null, name: null });
+  // WhatsApp Bot states - complete monitoring
+  const [botStatus, setBotStatus] = useState<{
+    isReady: boolean;
+    isConnecting: boolean;
+    hasQr: boolean;
+    qrCode: string | null;
+    number: string | null;
+    name: string | null;
+    lastConnectionTime: string | null;
+    lastDisconnectionTime: string | null;
+    lastError: string | null;
+    messagesProcessed: number;
+    errorCount: number;
+    reconnectAttempts: number;
+    uptime: number;
+    logs: string[];
+  }>({
+    isReady: false, isConnecting: false, hasQr: false, qrCode: null,
+    number: null, name: null, lastConnectionTime: null, lastDisconnectionTime: null,
+    lastError: null, messagesProcessed: 0, errorCount: 0, reconnectAttempts: 0,
+    uptime: 0, logs: [],
+  });
   const [botLoading, setBotLoading] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const [syncActive, setSyncActive] = useState(true);
   const botIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const formatUptime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
+
+  const formatTimeAgo = (iso: string | null) => {
+    if (!iso) return 'Nunca';
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (diff < 5) return 'Agora';
+    if (diff < 60) return `${diff}s atrás`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m atrás`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h atrás`;
+    return new Date(iso).toLocaleString('pt-BR');
+  };
+
+  const formatDateTime = (iso: string | null) => {
+    if (!iso) return 'N/A';
+    return new Date(iso).toLocaleString('pt-BR');
+  };
+
+  const BOT_URL = 'http://localhost:3001';
 
   const fetchBotStatus = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/bot/status');
+      const res = await fetch(`${BOT_URL}/api/bot/status`);
       if (res.ok) {
         const data = await res.json();
         setBotStatus(data);
+        setLastSyncTime(new Date().toISOString());
       }
     } catch {
-      setBotStatus({ isReady: false, hasQr: false, qrCode: null, number: null, name: null });
+      setBotStatus((prev) => ({
+        ...prev,
+        isReady: false,
+        isConnecting: false,
+        hasQr: false,
+        qrCode: null,
+        lastError: 'Bot process not running on port 3001',
+      }));
+      setLastSyncTime(new Date().toISOString());
     }
   }, []);
 
   useEffect(() => {
     fetchBotStatus();
-    botIntervalRef.current = setInterval(fetchBotStatus, 3000);
+    botIntervalRef.current = setInterval(fetchBotStatus, 5000);
     return () => { if (botIntervalRef.current) clearInterval(botIntervalRef.current); };
   }, [fetchBotStatus]);
 
   const handleDisconnectBot = async () => {
     setBotLoading(true);
     try {
-      await fetch('http://localhost:3001/api/bot/disconnect', { method: 'POST' });
+      await fetch(`${BOT_URL}/api/bot/disconnect`, { method: 'POST' });
       setTimeout(fetchBotStatus, 2000);
       addToast('WhatsApp Desconectado', 'O bot foi desconectado do WhatsApp.', 'info');
     } catch {
-      addToast('Erro', 'Não foi possível desconectar o bot.', 'error');
+      addToast('Erro', 'Não foi possível desconectar o bot. Verifique se o processo está rodando.', 'error');
+    } finally {
+      setBotLoading(false);
+    }
+  };
+
+  const handleReconnectBot = async () => {
+    setBotLoading(true);
+    try {
+      await fetch(`${BOT_URL}/api/bot/reconnect`, { method: 'POST' });
+      addToast('Reconectando', 'Tentativa de reconexão iniciada...', 'info');
+      setTimeout(fetchBotStatus, 3000);
+    } catch {
+      addToast('Erro', 'Não foi possível reconectar o bot.', 'error');
     } finally {
       setBotLoading(false);
     }
@@ -565,7 +635,7 @@ export const ConfiguracoesView: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* PAINEL WHATSAPP BOT - QR CODE */}
+          {/* PAINEL WHATSAPP BOT - MONITORAMENTO COMPLETO */}
           {/* ========================================================================= */}
           <div className="bg-zinc-900 rounded-2xl p-6 border border-green-500/30 shadow-xl space-y-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl -z-0 pointer-events-none" />
@@ -577,50 +647,98 @@ export const ConfiguracoesView: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-sm font-black text-zinc-100 flex items-center gap-2">
-                    <span>WhatsApp Bot (Disparo Automático)</span>
+                    <span>WhatsApp Bot (Monitoramento)</span>
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
                         botStatus.isReady
                           ? 'bg-green-500/10 text-green-400 border-green-500/30'
-                          : botStatus.hasQr
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                          : botStatus.isConnecting
+                          ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                          : botStatus.lastError
+                          ? 'bg-red-500/10 text-red-400 border-red-500/30'
                           : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
                       }`}
                     >
-                      {botStatus.isReady ? '🟢 Conectado' : botStatus.hasQr ? '🟡 Aguardando QR' : '⚪ Desconectado'}
+                      {botStatus.isReady ? '🟢 Conectado' : botStatus.isConnecting ? '🟡 Conectando' : botStatus.lastError ? '🔴 Erro' : '⚪ Desconectado'}
                     </span>
                   </h2>
                   <p className="text-[11px] text-zinc-400">
-                    Escaneie o QR Code para conectar e enviar mensagens automaticamente pelo WhatsApp.
+                    {botStatus.isReady
+                      ? `Conectado como ${botStatus.name || botStatus.number || 'WhatsApp'}`
+                      : botStatus.isConnecting
+                      ? 'Estabelecendo conexão com WhatsApp...'
+                      : botStatus.lastError
+                      ? `Erro: ${botStatus.lastError}`
+                      : 'Bot offline. Execute INICIAR_BOT.bat para iniciar.'}
                   </p>
                 </div>
               </div>
 
-              {botStatus.isReady && (
-                <button
-                  type="button"
-                  disabled={botLoading}
-                  onClick={handleDisconnectBot}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-rose-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer self-start sm:self-auto"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  <span>Desconectar</span>
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {!botStatus.isReady && !botStatus.isConnecting && (
+                  <button
+                    type="button"
+                    disabled={botLoading}
+                    onClick={handleReconnectBot}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${botLoading ? 'animate-spin' : ''}`} />
+                    <span>Reconectar</span>
+                  </button>
+                )}
+                {botStatus.isReady && (
+                  <button
+                    type="button"
+                    disabled={botLoading}
+                    onClick={handleDisconnectBot}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-rose-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Desconectar</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4 relative z-10">
               {botStatus.isReady ? (
-                <div className="flex items-center gap-4 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
-                  <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
-                    <CheckCircle2 className="w-6 h-6" />
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
+                    <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-green-400">WhatsApp Conectado!</p>
+                      <p className="text-xs text-zinc-400">
+                        <span className="font-mono text-zinc-300">{botStatus.number}</span>
+                        {botStatus.name && <span className="ml-2">({botStatus.name})</span>}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-green-400">WhatsApp Conectado!</p>
-                    <p className="text-xs text-zinc-400">
-                      <span className="font-mono text-zinc-300">{botStatus.number}</span>
-                      {botStatus.name && <span className="ml-2">({botStatus.name})</span>}
-                    </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Mensagens</p>
+                      <p className="text-lg font-black text-green-400">{botStatus.messagesProcessed}</p>
+                    </div>
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Erros</p>
+                      <p className="text-lg font-black text-zinc-300">{botStatus.errorCount}</p>
+                    </div>
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Uptime</p>
+                      <p className="text-lg font-black text-amber-400">{formatUptime(botStatus.uptime)}</p>
+                    </div>
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Reconexões</p>
+                      <p className="text-lg font-black text-zinc-300">{botStatus.reconnectAttempts}</p>
+                    </div>
+                  </div>
+                  <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                    <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Últimas Conexões</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-zinc-400">
+                      <span>🕐 Conectado: <span className="text-zinc-300">{formatDateTime(botStatus.lastConnectionTime)}</span></span>
+                      <span>🕐 Última sync: <span className="text-zinc-300">{formatTimeAgo(lastSyncTime)}</span></span>
+                    </div>
                   </div>
                 </div>
               ) : botStatus.hasQr && botStatus.qrCode ? (
@@ -636,26 +754,111 @@ export const ConfiguracoesView: React.FC = () => {
                   <p className="text-[10px] text-zinc-500 animate-pulse">Aguardando leitura do QR Code...</p>
                 </div>
               ) : (
-                <div className="text-center py-6 space-y-3">
-                  <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
-                    <QrCode className="w-8 h-8" />
+                <div className="space-y-4">
+                  <div className="text-center py-4 space-y-3">
+                    <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+                      <QrCode className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-zinc-300">
+                        {botStatus.isConnecting ? 'Conectando ao WhatsApp...' : 'Bot desconectado'}
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        {botStatus.isConnecting
+                          ? 'Aguarde enquanto o bot tenta se reconectar.'
+                          : 'Execute INICIAR_BOT.bat ou npm run bot para iniciar o bot.'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-zinc-300">Bot não conectado</p>
-                    <p className="text-[11px] text-zinc-500">
-                      Execute <span className="font-mono text-zinc-400">npm run bot</span> no terminal para iniciar o bot.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={fetchBotStatus}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Verificar Status</span>
-                  </button>
+                  {botStatus.lastError && (
+                    <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-xs">
+                      <p className="font-bold text-red-400 mb-1">Último Erro:</p>
+                      <p className="text-zinc-400 font-mono text-[11px]">{botStatus.lastError}</p>
+                    </div>
+                  )}
+                  {botStatus.logs.length > 0 && (
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800 max-h-32 overflow-y-auto">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Logs de Conexão</p>
+                      {botStatus.logs.map((log, i) => (
+                        <p key={i} className="text-[10px] text-zinc-500 font-mono">{log}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* PAINEL DE STATUS DO SISTEMA */}
+          {/* ========================================================================= */}
+          <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
+            <h2 className="text-sm font-black text-amber-400 flex items-center gap-2 border-b border-zinc-800 pb-3">
+              <Server className="w-4 h-4 text-amber-400" />
+              <span>Status do Sistema</span>
+              <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                syncActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'
+              }`}>
+                {syncActive ? '🟢 SYNC ATIVA' : '🔴 SYNC INATIVA'}
+              </span>
+            </h2>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-3.5 h-3.5 text-green-400" />
+                  <span className="text-zinc-300">WhatsApp</span>
+                </div>
+                <span className={`font-bold font-mono text-[11px] ${
+                  botStatus.isReady ? 'text-green-400' : botStatus.isConnecting ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {botStatus.isReady ? '🟢 CONECTADO' : botStatus.isConnecting ? '🟡 CONECTANDO' : '🔴 DESCONECTADO'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-3.5 h-3.5 text-green-400" />
+                  <span className="text-zinc-300">Bot</span>
+                </div>
+                <span className={`font-bold font-mono text-[11px] ${
+                  botStatus.isReady ? 'text-green-400' : botStatus.isConnecting ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {botStatus.isReady ? '🟢 ONLINE' : botStatus.isConnecting ? '🟡 STARTING' : '🔴 OFFLINE'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <Server className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-zinc-300">Backend</span>
+                </div>
+                <span className="font-bold font-mono text-[11px] text-green-400">🟢 ONLINE</span>
+              </div>
+              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <Database className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-zinc-300">Banco de Dados</span>
+                </div>
+                <span className={`font-bold font-mono text-[11px] ${isSupabaseActive ? 'text-green-400' : 'text-amber-400'}`}>
+                  {isSupabaseActive ? '🟢 SUPABASE' : '🟡 LOCAL'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-zinc-300">Sincronização</span>
+                </div>
+                <span className="font-bold font-mono text-[11px] text-green-400">
+                  {syncActive ? '🟢 ATIVA' : '🔴 INATIVA'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <Cloud className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-zinc-300">Última Sincronização</span>
+                </div>
+                <span className="font-bold font-mono text-[11px] text-zinc-300">
+                  {lastSyncTime ? formatDateTime(lastSyncTime) : 'N/A'}
+                </span>
+              </div>
             </div>
           </div>
 

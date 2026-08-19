@@ -11,17 +11,7 @@ import {
   INITIAL_ATENDIMENTOS,
 } from '../data/initialData';
 import confetti from 'canvas-confetti';
-import {
-  collection,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  writeBatch,
-  getDocs,
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
+// Firebase imports removed - using Supabase exclusively
 import {
   getSupabaseClient,
   isSupabaseConfigured,
@@ -250,88 +240,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, [isSupabaseActive, supabaseConfig]);
 
-  // 3. Fallback: Firebase Firestore Sync (when Supabase is not active)
+  // Firebase removed - Supabase is the primary database
   useEffect(() => {
-    if (isSupabaseActive) return;
-
-    let unsubscribeAtendimentos: (() => void) | undefined;
-    let unsubscribeEmpresa: (() => void) | undefined;
-
-    try {
-      const atendimentosColRef = collection(db, 'atendimentos');
-      const empresaDocRef = doc(db, 'empresa', 'default');
-
-      // Listen for atendimentos
-      unsubscribeAtendimentos = onSnapshot(
-        atendimentosColRef,
-        async (snapshot) => {
-          if (!snapshot.empty) {
-            const list: Atendimento[] = [];
-            snapshot.forEach((docSnap) => {
-              list.push(docSnap.data() as Atendimento);
-            });
-            list.sort((a, b) => b.id - a.id);
-            setAtendimentos(list);
-            localStorage.setItem(STORAGE_ATENDIMENTOS_KEY, JSON.stringify(list));
-            setCloudSynced(true);
-          } else {
-            // First time cloud initialization: seed default atendimentos
-            try {
-              const saved = localStorage.getItem(STORAGE_ATENDIMENTOS_KEY);
-              const initialToSeed = saved ? JSON.parse(saved) : INITIAL_ATENDIMENTOS;
-              if (initialToSeed && initialToSeed.length > 0) {
-                const batch = writeBatch(db);
-                initialToSeed.forEach((item: Atendimento) => {
-                  batch.set(doc(db, 'atendimentos', String(item.id)), item);
-                });
-                await batch.commit();
-              }
-            } catch (err) {
-              console.warn('Erro ao inicializar semente no Firestore:', err);
-            }
-            setCloudSynced(true);
-          }
-        },
-        (error) => {
-          console.warn('Aviso de conexão Firestore (atendimentos):', error);
-        }
-      );
-
-      // Listen for empresa config
-      unsubscribeEmpresa = onSnapshot(
-        empresaDocRef,
-        async (docSnap) => {
-          if (docSnap.exists()) {
-            const remoteEmpresa = docSnap.data() as EmpresaConfig;
-            setEmpresa({ ...DEFAULT_EMPRESA_CONFIG, ...remoteEmpresa });
-            localStorage.setItem(STORAGE_EMPRESA_KEY, JSON.stringify(remoteEmpresa));
-          } else {
-            try {
-              const savedEmpresa = localStorage.getItem(STORAGE_EMPRESA_KEY);
-              const toSeed = savedEmpresa ? JSON.parse(savedEmpresa) : DEFAULT_EMPRESA_CONFIG;
-              await setDoc(empresaDocRef, toSeed);
-            } catch (err) {
-              console.warn('Erro ao inicializar empresa no Firestore:', err);
-            }
-          }
-        },
-        (error) => {
-          console.warn('Aviso de conexão Firestore (empresa):', error);
-        }
-      );
-    } catch (e) {
-      console.warn('Erro ao configurar observadores do Firestore:', e);
-    }
-
-    return () => {
-      if (unsubscribeAtendimentos) unsubscribeAtendimentos();
-      if (unsubscribeEmpresa) unsubscribeEmpresa();
-    };
+    // No-op: Firebase/Firestore dependencies have been removed.
+    // All data sync goes through Supabase (above effect).
+    return undefined;
   }, [isSupabaseActive]);
 
   // CRUD Operations for Atendimentos
   const addAtendimento = async (data: Omit<Atendimento, 'id' | 'criadoEm'>): Promise<number> => {
-    const nextId = atendimentos.length > 0 ? Math.max(...atendimentos.map((a) => a.id)) + 1 : 1;
+    const nextId = Date.now();
     const newAtendimento: Atendimento = {
       ...data,
       id: nextId,
@@ -339,8 +257,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     // Optimistic UI update
-    setAtendimentos((prev) => [newAtendimento, ...prev]);
-    localStorage.setItem(STORAGE_ATENDIMENTOS_KEY, JSON.stringify([newAtendimento, ...atendimentos]));
+    setAtendimentos((prev) => {
+      const next = [newAtendimento, ...prev];
+      localStorage.setItem(STORAGE_ATENDIMENTOS_KEY, JSON.stringify(next));
+      return next;
+    });
 
     // Dual-write to active database and cloud backup
     if (isSupabaseActive) {
@@ -353,13 +274,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           console.warn('Aviso ao sincronizar no Supabase:', e);
         }
       }
-    }
-    
-    // Always persist to cloud database (Firestore) as backup
-    try {
-      await setDoc(doc(db, 'atendimentos', String(nextId)), newAtendimento);
-    } catch (e) {
-      console.warn('Aviso ao salvar no Firestore:', e);
     }
 
     try {
@@ -409,17 +323,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
 
-    // Always update Firestore backup
-    try {
-      const docRef = doc(db, 'atendimentos', String(id));
-      await updateDoc(docRef, {
-        ...updates,
-        atualizadoEm: new Date().toISOString(),
-      });
-    } catch (e) {
-      console.warn('Aviso ao atualizar no Firestore:', e);
-    }
-
     addToast('Atendimento Atualizado', 'As alterações foram salvas e sincronizadas.', 'success');
   };
 
@@ -450,16 +353,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           console.warn('Aviso ao atualizar status no Supabase:', e);
         }
       }
-    }
-
-    try {
-      const docRef = doc(db, 'atendimentos', String(id));
-      await updateDoc(docRef, {
-        status: newStatus,
-        atualizadoEm: new Date().toISOString(),
-      });
-    } catch (e) {
-      console.warn('Aviso ao atualizar status no Firestore:', e);
     }
 
     if (newStatus === 'Concluído' || newStatus === 'Aprovado') {
@@ -498,12 +391,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
 
-    try {
-      await deleteDoc(doc(db, 'atendimentos', String(id)));
-    } catch (e) {
-      console.warn('Aviso ao excluir no Firestore:', e);
-    }
-
     addToast('Atendimento Excluído', `Registro de ${target?.nome || '#' + id} removido.`, 'warning');
   };
 
@@ -521,12 +408,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           console.warn('Aviso ao atualizar empresa no Supabase:', e);
         }
       }
-    }
-
-    try {
-      await setDoc(doc(db, 'empresa', 'default'), updated);
-    } catch (e) {
-      console.warn('Aviso ao salvar empresa no Firestore:', e);
     }
 
     addToast('Configurações Salvas', 'Dados da empresa e layout salvos no banco!', 'success');
@@ -548,21 +429,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } catch (e) {
           console.error('Erro ao redefinir no Supabase:', e);
         }
-      }
-    } else {
-      try {
-        const snapshot = await getDocs(collection(db, 'atendimentos'));
-        const batch = writeBatch(db);
-        snapshot.forEach((docSnap) => {
-          batch.delete(docSnap.ref);
-        });
-        INITIAL_ATENDIMENTOS.forEach((item) => {
-          batch.set(doc(db, 'atendimentos', String(item.id)), item);
-        });
-        batch.set(doc(db, 'empresa', 'default'), DEFAULT_EMPRESA_CONFIG);
-        await batch.commit();
-      } catch (e) {
-        console.error('Erro ao redefinir dados no Firestore:', e);
       }
     }
 
@@ -591,20 +457,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } catch (e) {
           console.error('Erro ao limpar Supabase:', e);
         }
-      }
-    } else {
-      try {
-        const snapshot = await getDocs(collection(db, 'atendimentos'));
-        const batch = writeBatch(db);
-        snapshot.forEach((docSnap) => {
-          batch.delete(docSnap.ref);
-        });
-        if (resetEmpresa) {
-          batch.set(doc(db, 'empresa', 'default'), DEFAULT_EMPRESA_CONFIG);
-        }
-        await batch.commit();
-      } catch (e) {
-        console.error('Erro ao limpar Firestore:', e);
       }
     }
 
@@ -643,20 +495,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             await supabase.from('atendimentos').delete().neq('id', 0);
             await supabase.from('atendimentos').insert(parsed.atendimentos.map(mapAtendimentoToSupabaseRow));
           }
-        } else {
-          try {
-            const snapshot = await getDocs(collection(db, 'atendimentos'));
-            const batch = writeBatch(db);
-            snapshot.forEach((docSnap) => {
-              batch.delete(docSnap.ref);
-            });
-            parsed.atendimentos.forEach((item: Atendimento) => {
-              batch.set(doc(db, 'atendimentos', String(item.id)), item);
-            });
-            await batch.commit();
-          } catch (err) {
-            console.warn('Erro ao sincronizar importação no Firestore:', err);
-          }
         }
       }
       if (parsed.empresa && typeof parsed.empresa === 'object') {
@@ -668,12 +506,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const supabase = getSupabaseClient();
           if (supabase) {
             await supabase.from('empresa_config').upsert(mapEmpresaToSupabaseRow(newEmpresa));
-          }
-        } else {
-          try {
-            await setDoc(doc(db, 'empresa', 'default'), newEmpresa);
-          } catch (err) {
-            console.warn('Erro ao atualizar empresa importada no Firestore:', err);
           }
         }
       }

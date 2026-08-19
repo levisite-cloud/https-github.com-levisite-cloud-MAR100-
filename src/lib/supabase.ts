@@ -179,7 +179,7 @@ export function mapSupabaseRowToAtendimento(row: any): Atendimento {
     itensOrcamento: Array.isArray(row.itens_orcamento) ? row.itens_orcamento : [],
     obs: row.obs || '',
     criadoEm: row.criado_em || new Date().toISOString(),
-    atualizadoEm: row.atualizado_em || undefined,
+    atualizadoEm: row.atualizado_em || new Date().toISOString(),
   };
 }
 

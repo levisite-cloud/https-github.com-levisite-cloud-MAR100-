@@ -4,30 +4,130 @@ import QRCodeLib from 'qrcode';
 import qrcode from 'qrcode-terminal';
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
 
-const app = express();
+// ========== CONFIG ==========
 const PORT = 3001;
+const MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_BASE_DELAY = 3000;
+const SESSION_DIR = './whatsapp-session';
+const LOG_FILE = './bot-logs.log';
 
-app.use(cors());
-app.use(express.json());
-
+// ========== STATE ==========
 let client: any = null;
 let isReady = false;
+let isConnecting = false;
 let qrCode: string | null = null;
 let qrCodeBase64: string | null = null;
 let botNumber: string | null = null;
 let botName: string | null = null;
+let reconnectAttempts = 0;
+let lastConnectionTime: string | null = null;
+let lastDisconnectionTime: string | null = null;
+let lastError: string | null = null;
+let messagesProcessed = 0;
+let errorCount = 0;
+let startTime = new Date().toISOString();
+let connectionLogs: string[] = [];
+let pendingReconnect: ReturnType<typeof setTimeout> | null = null;
 
-function initializeClient() {
+// ========== LOGGING ==========
+function log(msg: string) {
+  const timestamp = new Date().toLocaleString('pt-BR');
+  const line = `[${timestamp}] ${msg}`;
+  console.log(line);
+  connectionLogs.push(line);
+  if (connectionLogs.length > 100) connectionLogs.shift();
   try {
-    if (client) {
-      try { client.removeAllListeners(); } catch {}
-      try { client.destroy(); } catch {}
-    }
+    fs.appendFileSync(LOG_FILE, line + '\n');
   } catch {}
+}
+
+// ========== EXPRESS ==========
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '1mb' }));
+
+// ========== HEALTH CHECK ==========
+app.get('/api/bot/health', (_req, res) => {
+  const uptime = Math.floor((Date.now() - new Date(startTime).getTime()) / 1000);
+  res.json({
+    status: isReady ? 'online' : isConnecting ? 'connecting' : 'offline',
+    uptime,
+    startTime,
+    bot: {
+      connected: isReady,
+      connecting: isConnecting,
+      number: botNumber,
+      name: botName,
+    },
+    stats: {
+      messagesProcessed,
+      errorCount,
+      reconnectAttempts,
+      lastError,
+      lastConnectionTime,
+      lastDisconnectionTime,
+    },
+    logs: connectionLogs.slice(-20),
+  });
+});
+
+// ========== STATUS (compativel com frontend) ==========
+app.get('/api/bot/status', (_req, res) => {
+  res.json({
+    isReady,
+    isConnecting,
+    hasQr: qrCode !== null,
+    qrCode: qrCodeBase64,
+    number: botNumber,
+    name: botName,
+    lastConnectionTime,
+    lastDisconnectionTime,
+    lastError,
+    messagesProcessed,
+    errorCount,
+    reconnectAttempts,
+    uptime: Math.floor((Date.now() - new Date(startTime).getTime()) / 1000),
+    logs: connectionLogs.slice(-10),
+  });
+});
+
+// ========== WHATSAPP CLIENT ==========
+function initializeClient() {
+  // Limpar timeout pendente
+  if (pendingReconnect) {
+    clearTimeout(pendingReconnect);
+    pendingReconnect = null;
+  }
+
+  // Evitar multiplas inicializacoes
+  if (isConnecting) {
+    log('Ignorado: inicializacao ja em andamento');
+    return;
+  }
+
+  // Destruir client anterior se existir
+  if (client) {
+    try {
+      client.removeAllListeners();
+    } catch {}
+    try {
+      client.destroy();
+    } catch {}
+    client = null;
+  }
+
+  isConnecting = true;
+  isReady = false;
+  qrCode = null;
+  qrCodeBase64 = null;
+
+  log(`Iniciando client WhatsApp (tentativa ${reconnectAttempts + 1})...`);
 
   client = new Client({
-    authStrategy: new LocalAuth({ dataPath: './whatsapp-session' }),
+    authStrategy: new LocalAuth({ dataPath: SESSION_DIR }),
     puppeteer: {
       headless: true,
       args: [
@@ -44,48 +144,58 @@ function initializeClient() {
     },
   });
 
+  // ===== EVENTOS =====
+
   client.on('qr', async (qr: string) => {
     qrCode = qr;
+    isConnecting = true;
     try {
       qrCodeBase64 = await QRCodeLib.toDataURL(qr, { width: 300, margin: 2 });
-    } catch {}
-    console.log('\n📱 Escaneie o QR Code com seu WhatsApp:\n');
+    } catch (e) {
+      log('Erro ao gerar QR base64: ' + e);
+      qrCodeBase64 = null;
+    }
+    log('QR Code gerado - escaneie com WhatsApp');
     qrcode.generate(qr, { small: true });
-    console.log('\nAguardando leitura...\n');
   });
 
   client.on('ready', () => {
     isReady = true;
+    isConnecting = false;
+    reconnectAttempts = 0;
     qrCode = null;
     qrCodeBase64 = null;
+    lastConnectionTime = new Date().toISOString();
     botNumber = client.info?.wid?.user || null;
     botName = client.info?.pushname || null;
-    console.log('✅ Bot WhatsApp conectado!');
-    console.log(`📱 Número: ${botNumber}`);
-    console.log(`👤 Nome: ${botName}\n`);
+    log(`CONECTADO - Numero: ${botNumber}, Nome: ${botName}`);
   });
 
   client.on('authenticated', () => {
-    console.log('🔐 Autenticado!');
+    log('Autenticado com sucesso');
+    isConnecting = true;
   });
 
   client.on('auth_failure', (msg: string) => {
-    console.error('❌ Falha na autenticação:', msg);
+    log(`FALHA AUTENTICACAO: ${msg}`);
     isReady = false;
-    botNumber = null;
-    botName = null;
+    isConnecting = false;
+    lastError = `Auth failure: ${msg}`;
+    errorCount++;
+    scheduleReconnect();
   });
 
   client.on('disconnected', (reason: string) => {
-    console.log('⚠️ Desconectado:', reason);
+    log(`DESCONECTADO: ${reason}`);
     isReady = false;
+    isConnecting = false;
+    lastDisconnectionTime = new Date().toISOString();
+    lastError = `Disconnected: ${reason}`;
     botNumber = null;
     botName = null;
     qrCode = null;
     qrCodeBase64 = null;
-    setTimeout(() => {
-      try { initializeClient(); } catch (e) { console.error('Erro ao reiniciar:', e); }
-    }, 3000);
+    scheduleReconnect();
   });
 
   client.on('message', async (msg: any) => {
@@ -93,7 +203,8 @@ function initializeClient() {
       const chat = await msg.getChat();
       const contact = await msg.getContact();
       const name = contact.pushname || contact.name || 'Desconhecido';
-      console.log(`📩 ${name} (${chat.id.user}): ${msg.body}`);
+      messagesProcessed++;
+      log(`MSG ${name} (${chat.id.user}): ${msg.body}`);
 
       if (msg.body.toLowerCase() === 'menu' || msg.body === '1') {
         await msg.reply(
@@ -104,43 +215,62 @@ function initializeClient() {
           '4️⃣ - Falar com atendente\n\n' +
           'Digite o número da opção desejada.'
         );
-      }
-      if (msg.body === '4' || msg.body.toLowerCase() === 'atendente') {
+      } else if (msg.body === '4' || msg.body.toLowerCase() === 'atendente') {
         await msg.reply('_Transferindo para um atendente... Aguarde um momento!_');
       }
-    } catch (e) {
-      console.error('Erro ao processar mensagem:', e);
+    } catch (e: any) {
+      log(`Erro ao processar mensagem: ${e.message}`);
+      errorCount++;
     }
   });
 
   client.on('error', (err: any) => {
-    console.error('❌ Erro no client:', err.message || err);
+    const errMsg = err?.message || String(err);
+    log(`ERRO CLIENT: ${errMsg}`);
+    lastError = errMsg;
+    errorCount++;
   });
 
+  // Inicializar
   try {
     client.initialize();
-    console.log('🤖 Inicializando WhatsApp...');
-  } catch (e) {
-    console.error('❌ Erro ao inicializar client:', e);
+    log('Client inicializado, aguardando eventos...');
+  } catch (e: any) {
+    log(`ERRO FATAL ao inicializar: ${e.message}`);
     isReady = false;
+    isConnecting = false;
+    lastError = `Init error: ${e.message}`;
+    errorCount++;
+    scheduleReconnect();
   }
 }
 
-// ========== API ==========
+// ========== RECONEXAO COM BACKOFF ==========
+function scheduleReconnect() {
+  if (pendingReconnect) return;
 
-app.get('/api/bot/status', (_req, res) => {
-  res.json({
-    isReady,
-    hasQr: qrCode !== null,
-    qrCode: qrCodeBase64,
-    number: botNumber,
-    name: botName,
-  });
-});
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    log(`Maximo de ${MAX_RECONNECT_ATTEMPTS} tentativas atingido. Aguardando reinicio manual.`);
+    isConnecting = false;
+    return;
+  }
+
+  reconnectAttempts++;
+  const delay = Math.min(RECONNECT_BASE_DELAY * reconnectAttempts, 30000);
+  log(`Reconectando em ${delay / 1000}s (tentativa ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+
+  isConnecting = true;
+  pendingReconnect = setTimeout(() => {
+    pendingReconnect = null;
+    initializeClient();
+  }, delay);
+}
+
+// ========== API ENDPOINTS ==========
 
 app.post('/api/bot/send', async (req, res) => {
   if (!isReady || !client) {
-    return res.status(503).json({ error: 'Bot não conectado.' });
+    return res.status(503).json({ error: 'Bot não conectado.', connected: false });
   }
   const { phone, message } = req.body;
   if (!phone || !message) {
@@ -150,10 +280,12 @@ app.post('/api/bot/send', async (req, res) => {
     const digits = phone.replace(/\D/g, '');
     const cleanPhone = digits.startsWith('55') ? digits : `55${digits}`;
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
-    console.log(`✅ Enviado para ${cleanPhone}`);
+    messagesProcessed++;
+    log(`MSG ENVIADA para ${cleanPhone}`);
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
-    console.error('❌ Erro ao enviar:', e.message);
+    errorCount++;
+    log(`ERRO ENVIO: ${e.message}`);
     res.status(500).json({ error: e.message });
   }
 });
@@ -174,9 +306,11 @@ app.post('/api/bot/orcamento', async (req, res) => {
       `${obs ? `📝 *Obs:* ${obs}\n\n` : ''}` +
       `Podemos tirar alguma dúvida ou agendar uma data para início? 😊`;
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
-    console.log(`✅ Orçamento enviado para ${cleanPhone}`);
+    messagesProcessed++;
+    log(`ORCAMENTO enviado para ${cleanPhone}`);
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
+    errorCount++;
     res.status(500).json({ error: e.message });
   }
 });
@@ -200,9 +334,11 @@ app.post('/api/bot/visita', async (req, res) => {
       `${googleCalendarUrl ? `\n📅 *Google Agenda:* \n${googleCalendarUrl}\n` : ''}` +
       `Confirme o recebimento. Obrigado!`;
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
-    console.log(`✅ Visita enviada para ${cleanPhone}`);
+    messagesProcessed++;
+    log(`VISITA enviada para ${cleanPhone}`);
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
+    errorCount++;
     res.status(500).json({ error: e.message });
   }
 });
@@ -223,9 +359,11 @@ app.post('/api/bot/producao', async (req, res) => {
       `${previsao ? `📅 *Previsão:* ${previsao}\n` : ''}` +
       `\nObrigado pela paciência! 😊`;
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
-    console.log(`✅ Produção enviada para ${cleanPhone}`);
+    messagesProcessed++;
+    log(`PRODUCAO enviada para ${cleanPhone}`);
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
+    errorCount++;
     res.status(500).json({ error: e.message });
   }
 });
@@ -247,9 +385,11 @@ app.post('/api/bot/instalacao', async (req, res) => {
       `${endereco ? `📍 *Local:* ${endereco}\n` : ''}` +
       `\nCertifique-se de que o local esteja acessível. 😊`;
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
-    console.log(`✅ Instalação enviada para ${cleanPhone}`);
+    messagesProcessed++;
+    log(`INSTALACAO enviada para ${cleanPhone}`);
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
+    errorCount++;
     res.status(500).json({ error: e.message });
   }
 });
@@ -278,14 +418,13 @@ app.post('/api/bot/disconnect', async (_req, res) => {
     if (client) {
       await client.destroy();
       isReady = false;
+      isConnecting = false;
       qrCode = null;
       qrCodeBase64 = null;
       botNumber = null;
       botName = null;
-      console.log('⚠️ Bot desconectado pelo usuário');
-      setTimeout(() => {
-        try { initializeClient(); } catch {}
-      }, 2000);
+      lastDisconnectionTime = new Date().toISOString();
+      log('Desconectado pelo usuario (sem auto-restart)');
     }
     res.json({ success: true });
   } catch (e: any) {
@@ -293,16 +432,46 @@ app.post('/api/bot/disconnect', async (_req, res) => {
   }
 });
 
+// Reconexao manual
+app.post('/api/bot/reconnect', (_req, res) => {
+  if (isReady) {
+    return res.json({ success: true, message: 'Bot ja esta conectado' });
+  }
+  reconnectAttempts = 0;
+  lastError = null;
+  log('Reconectando manualmente...');
+  initializeClient();
+  res.json({ success: true, message: 'Reconexao iniciada' });
+});
+
+// Reset de tentativas
+app.post('/api/bot/reset', (_req, res) => {
+  reconnectAttempts = 0;
+  lastError = null;
+  errorCount = 0;
+  log('Contadores resetados');
+  res.json({ success: true });
+});
+
 // ========== START ==========
-console.log('🤖 MAR100 WhatsApp Bot\n');
-app.listen(PORT, () => {
-  console.log(`🌐 API em http://localhost:${PORT}`);
-  console.log(`📡 GET  /api/bot/status`);
-  console.log(`📡 POST /api/bot/send`);
-  console.log(`📡 POST /api/bot/orcamento`);
-  console.log(`📡 POST /api/bot/visita`);
-  console.log(`📡 POST /api/bot/producao`);
-  console.log(`📡 POST /api/bot/instalacao`);
-  console.log(`📡 GET  /api/bot/chats\n`);
+console.log('');
+console.log('╔══════════════════════════════════════╗');
+console.log('║    MAR100 - WhatsApp Bot v2.0        ║');
+console.log('╚══════════════════════════════════════╝');
+console.log('');
+
+app.listen(PORT, '0.0.0.0', () => {
+  log(`API Bot rodando em http://localhost:${PORT}`);
+  console.log('Endpoints:');
+  console.log(`  GET  /api/bot/status`);
+  console.log(`  GET  /api/bot/health`);
+  console.log(`  POST /api/bot/send`);
+  console.log(`  POST /api/bot/orcamento`);
+  console.log(`  POST /api/bot/visita`);
+  console.log(`  POST /api/bot/producao`);
+  console.log(`  POST /api/bot/instalacao`);
+  console.log(`  POST /api/bot/disconnect`);
+  console.log(`  POST /api/bot/reconnect`);
+  console.log('');
   initializeClient();
 });
