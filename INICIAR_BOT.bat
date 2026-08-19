@@ -10,7 +10,7 @@ echo =============================================
 echo.
 
 REM 1. Verificar Node.js
-echo [1/5] Verificando Node.js...
+echo [1/6] Verificando Node.js...
 node --version >nul 2>&1
 if errorlevel 1 (
     echo.
@@ -24,7 +24,7 @@ for /f "tokens=*" %%v in ('node --version') do echo   Node.js: %%v
 
 REM 2. Verificar dependencias
 echo.
-echo [2/5] Verificando dependencias...
+echo [2/6] Verificando dependencias...
 if not exist "node_modules" (
     echo   Instalando dependencias...
     call npm install
@@ -37,39 +37,36 @@ if not exist "node_modules" (
     echo   Dependencias OK
 )
 
-REM 3. Verificar se ja existem processos rodando
+REM 3. Matar processos antigos nas portas 3000 e 3001
 echo.
-echo [3/5] Verificando processos existentes...
-tasklist /fi "WINDOWTITLE eq MAR100-Backend" 2>nul | find /i "node" >nul
-if not errorlevel 1 (
-    echo   [AVISO] Backend ja esta rodando. Pulando...
-    set BACKEND_RUNNING=1
+echo [3/6] Limpando portas...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000 ^| findstr LISTENING') do (
+    echo   Matando processo na porta 3000 (PID: %%a)
+    taskkill /f /pid %%a >nul 2>&1
 )
-tasklist /fi "WINDOWTITLE eq MAR100-Bot" 2>nul | find /i "node" >nul
-if not errorlevel 1 (
-    echo   [AVISO] Bot ja esta rodando. Pulando...
-    set BOT_RUNNING=1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3001 ^| findstr LISTENING') do (
+    echo   Matando processo na porta 3001 (PID: %%a)
+    taskkill /f /pid %%a >nul 2>&1
 )
+echo   Portas limpas!
 
-REM 4. Iniciar Backend (Frontend + Server)
-if not defined BACKEND_RUNNING (
-    echo.
-    echo [4/5] Iniciando Backend (porta 3000)...
-    start "MAR100-Backend" cmd /c "cd /d "%~dp0" && npm run dev"
-    echo   Backend iniciado!
-) else (
-    echo [4/5] Backend ja ativo.
-)
+REM 4. Iniciar Backend (Frontend + Server na porta 3000)
+echo.
+echo [4/6] Iniciando Backend (porta 3000)...
+start "MAR100-Backend" cmd /k "cd /d "%~dp0" && title MAR100-Backend && npm run dev"
+echo   Backend iniciado!
 
-REM 5. Iniciar Bot WhatsApp
-if not defined BOT_RUNNING (
-    echo.
-    echo [5/5] Iniciando Bot WhatsApp (porta 3001)...
-    start "MAR100-Bot" cmd /c "cd /d "%~dp0" && npm run bot"
-    echo   Bot WhatsApp iniciado!
-) else (
-    echo [5/5] Bot ja ativo.
-)
+REM 5. Iniciar Bot WhatsApp (porta 3001)
+echo.
+echo [5/6] Iniciando Bot WhatsApp (porta 3001)...
+start "MAR100-Bot" cmd /k "cd /d "%~dp0" && title MAR100-Bot && npm run bot"
+echo   Bot iniciado!
+
+REM 6. Iniciar Sync GitHub
+echo.
+echo [6/6] Iniciando Sync GitHub...
+start "MAR100-Sync" cmd /k "cd /d "%~dp0" && title MAR100-Sync && npm run sync"
+echo   Sync iniciado!
 
 echo.
 echo =============================================
@@ -78,27 +75,52 @@ echo =============================================
 echo.
 echo   Frontend:  http://localhost:3000
 echo   Bot API:   http://localhost:3001/api/bot/status
+echo   Bot Health: http://localhost:3001/api/bot/health
+echo   Sync:      Rodando a cada 30s
 echo.
-echo   Para parar: feche as janelas do terminal
-echo              ou pressione Ctrl+C em cada uma.
+echo   3 terminais abertos:
+echo     - MAR100-Backend
+echo     - MAR100-Bot
+echo     - MAR100-Sync
+echo.
+echo   Para PARAR: feche as 3 janelas do terminal
 echo.
 
-REM Aguardar um pouco e mostrar status
-echo Aguardando inicializacao (10s)...
-timeout /t 10 /nobreak >nul
+REM Aguardar e mostrar status
+echo Aguardando inicializacao (15s)...
+timeout /t 15 /nobreak >nul
 
-REM Verificar status
 echo.
-echo Verificando status...
+echo Verificando status dos servicos...
+echo.
+
+REM Verificar Backend
+curl -s http://localhost:3000 >nul 2>&1
+if not errorlevel 1 (
+    echo   [OK] Backend:     ONLINE  - http://localhost:3000
+) else (
+    echo   [..] Backend:     Aguarde...
+)
+
+REM Verificar Bot
 curl -s http://localhost:3001/api/bot/status >nul 2>&1
 if not errorlevel 1 (
-    echo.
-    echo   Bot WhatsApp: ONLINE
+    echo   [OK] Bot:         ONLINE  - http://localhost:3001
 ) else (
-    echo.
-    echo   Bot WhatsApp: Iniciando (aguarde mais alguns segundos)
+    echo   [..] Bot:         Aguarde...
+)
+
+REM Verificar Sync
+tasklist /fi "WINDOWTITLE eq MAR100-Sync" 2>nul | find /i "cmd" >nul
+if not errorlevel 1 (
+    echo   [OK] Sync:        ATIVO
+) else (
+    echo   [..] Sync:        Verificando...
 )
 
 echo.
-echo Pressione qualquer tecla para fechar esta janela...
-pause >nul
+echo =============================================
+echo   Pronto! Acesse http://localhost:3000
+echo =============================================
+echo.
+pause
