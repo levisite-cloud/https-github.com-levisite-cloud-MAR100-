@@ -662,61 +662,80 @@ export const ConfiguracoesView: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-sm font-black text-zinc-100 flex items-center gap-2">
-                    <span>WhatsApp Bot (Monitoramento)</span>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                        botStatus.isReady
-                          ? 'bg-green-500/10 text-green-400 border-green-500/30'
-                          : botStatus.isConnecting
-                          ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
-                          : botStatus.lastError
-                          ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                          : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
-                      }`}
-                    >
-                      {botStatus.isReady ? '🟢 Conectado' : botStatus.isConnecting ? '🟡 Conectando' : botStatus.lastError ? '🔴 Erro' : '⚪ Desconectado'}
-                    </span>
+                    <span>WhatsApp Bot</span>
+                    {!isLocalEnv ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-blue-500/10 text-blue-400 border-blue-500/30">
+                        🌐 Remoto
+                      </span>
+                    ) : botStatus.isReady ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-green-500/10 text-green-400 border-green-500/30">
+                        🟢 Conectado
+                      </span>
+                    ) : botStatus.isConnecting ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
+                        🟡 Conectando
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-zinc-500/10 text-zinc-400 border-zinc-500/30">
+                        ⚪ Off
+                      </span>
+                    )}
                   </h2>
                   <p className="text-[11px] text-zinc-400">
-                    {botStatus.isReady
+                    {!isLocalEnv
+                      ? 'Bot rodando apenas no computador local. Acesse http://localhost:3000 para monitorar.'
+                      : botStatus.isReady
                       ? `Conectado como ${botStatus.name || botStatus.number || 'WhatsApp'}`
                       : botStatus.isConnecting
                       ? 'Estabelecendo conexão com WhatsApp...'
-                      : botStatus.lastError
-                      ? `Erro: ${botStatus.lastError}`
-                      : 'Bot offline. Execute INICIAR_BOT.bat para iniciar.'}
+                      : 'Execute INICIAR_BOT.bat ou npm run bot para iniciar.'}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {!botStatus.isReady && !botStatus.isConnecting && (
-                  <button
-                    type="button"
-                    disabled={botLoading}
-                    onClick={handleReconnectBot}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${botLoading ? 'animate-spin' : ''}`} />
-                    <span>Reconectar</span>
-                  </button>
-                )}
-                {botStatus.isReady && (
-                  <button
-                    type="button"
-                    disabled={botLoading}
-                    onClick={handleDisconnectBot}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-rose-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    <span>Desconectar</span>
-                  </button>
-                )}
-              </div>
+              {isLocalEnv && (
+                <div className="flex items-center gap-2">
+                  {!botStatus.isReady && !botStatus.isConnecting && (
+                    <button
+                      type="button"
+                      disabled={botLoading}
+                      onClick={handleReconnectBot}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${botLoading ? 'animate-spin' : ''}`} />
+                      <span>Reconectar</span>
+                    </button>
+                  )}
+                  {botStatus.isReady && (
+                    <button
+                      type="button"
+                      disabled={botLoading}
+                      onClick={handleDisconnectBot}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-rose-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Desconectar</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-4 relative z-10">
-              {botStatus.isReady ? (
+              {!isLocalEnv ? (
+                <div className="text-center py-6 space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto text-blue-400">
+                    <Cloud className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-zinc-300">Bot disponível apenas localmente</p>
+                    <p className="text-[11px] text-zinc-500 max-w-sm mx-auto leading-relaxed">
+                      O WhatsApp Bot roda no computador onde o <span className="font-mono text-zinc-400">INICIAR_BOT.bat</span> foi executado.
+                      Para monitorar o status, acesse <span className="font-mono text-zinc-400">http://localhost:3000</span> na mesma máquina.
+                    </p>
+                  </div>
+                </div>
+              ) : botStatus.isReady ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
                     <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
@@ -786,8 +805,8 @@ export const ConfiguracoesView: React.FC = () => {
                     </div>
                   </div>
                   {botStatus.lastError && (
-                    <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-xs">
-                      <p className="font-bold text-red-400 mb-1">Último Erro:</p>
+                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-xs">
+                      <p className="font-bold text-amber-400 mb-1">Status:</p>
                       <p className="text-zinc-400 font-mono text-[11px]">{botStatus.lastError}</p>
                     </div>
                   )}
