@@ -313,20 +313,30 @@ function initializeClient() {
       const chat = await msg.getChat();
       const contact = await msg.getContact();
       const name = contact.pushname || contact.name || 'Desconhecido';
+      const phone = chat.id.user;
       messagesProcessed++;
-      log(`MSG ${name} (${chat.id.user}): ${msg.body}`);
+      log(`MSG ${name} (${phone}): ${msg.body}`);
+
+      // Salvar mensagem recebida no Supabase
+      await saveIncomingMessage(phone, name, msg.body);
+
+      // Atualizar status do bot no Supabase
+      await updateBotStatus();
 
       if (msg.body.toLowerCase() === 'menu' || msg.body === '1') {
-        await msg.reply(
+        const reply =
           'Olá! Bem-vindo ao atendimento automático.\n\n' +
           '1️⃣ - Ver orçamento\n' +
           '2️⃣ - Agendar visita\n' +
           '3️⃣ - Status do pedido\n' +
           '4️⃣ - Falar com atendente\n\n' +
-          'Digite o número da opção desejada.'
-        );
+          'Digite o número da opção desejada.';
+        await msg.reply(reply);
+        await saveOutgoingMessage(phone, reply, 'auto_reply');
       } else if (msg.body === '4' || msg.body.toLowerCase() === 'atendente') {
-        await msg.reply('_Transferindo para um atendente... Aguarde um momento!_');
+        const reply = '_Transferindo para um atendente... Aguarde um momento!_';
+        await msg.reply(reply);
+        await saveOutgoingMessage(phone, reply, 'auto_reply');
       }
     } catch (e: any) {
       log(`Erro ao processar mensagem: ${e.message}`);
@@ -392,6 +402,8 @@ app.post('/api/bot/send', async (req, res) => {
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
     messagesProcessed++;
     log(`MSG ENVIADA para ${cleanPhone}`);
+    await saveOutgoingMessage(cleanPhone, message, 'manual');
+    await updateBotStatus();
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
     errorCount++;
