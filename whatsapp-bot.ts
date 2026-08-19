@@ -8,6 +8,9 @@ import fs from 'fs';
 import path from 'path';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+process.on('uncaughtException', (err) => { console.error('Uncaught:', err.message); });
+process.on('unhandledRejection', (err: any) => { console.error('Unhandled:', err?.message || err); });
+
 const PORT = 3001;
 const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_BASE_DELAY = 3000;
