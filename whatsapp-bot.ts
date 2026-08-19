@@ -6,6 +6,7 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // ========== CONFIG ==========
 const PORT = 3001;
@@ -13,6 +14,17 @@ const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_BASE_DELAY = 3000;
 const SESSION_DIR = './whatsapp-session';
 const LOG_FILE = './bot-logs.log';
+const SUPABASE_URL = 'https://bxtghkxoobjhenapbmse.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_8f5E5FprlK2rjTYEDCktpg_T67mntBa';
+
+// ========== SUPABASE ==========
+let supabase: SupabaseClient | null = null;
+try {
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  log('Supabase conectado - sincronizacao ativa');
+} catch (e: any) {
+  log('Erro ao conectar Supabase: ' + e.message);
+}
 
 // ========== STATE ==========
 let client: any = null;
@@ -42,6 +54,104 @@ function log(msg: string) {
   try {
     fs.appendFileSync(LOG_FILE, line + '\n');
   } catch {}
+}
+
+// ========== SUPABASE SYNC ==========
+async function saveIncomingMessage(phone: string, name: string, message: string) {
+  if (!supabase) return;
+  try {
+    await supabase.from('whatsapp_messages').insert({
+      phone,
+      contact_name: name,
+      message,
+      direction: 'incoming',
+      status: 'received',
+      created_at: new Date().toISOString(),
+    });
+    log(`MSG salva no Supabase: ${name} (${phone})`);
+  } catch (e: any) {
+    log('Erro ao salvar msg no Supabase: ' + e.message);
+  }
+}
+
+async function saveOutgoingMessage(phone: string, message: string, type: string) {
+  if (!supabase) return;
+  try {
+    await supabase.from('whatsapp_messages').insert({
+      phone,
+      contact_name: '',
+      message,
+      direction: 'outgoing',
+      message_type: type,
+      status: 'sent',
+      created_at: new Date().toISOString(),
+    });
+    log(`MSG ENVIADA salva no Supabase: ${phone}`);
+  } catch (e: any) {
+    log('Erro ao salvar envio no Supabase: ' + e.message);
+  }
+}
+
+async function updateBotStatus() {
+  if (!supabase) return;
+  try {
+    await supabase.from('bot_status').upsert({
+      id: 'main',
+      connected: isReady,
+      connecting: isConnecting,
+      bot_number: botNumber,
+      bot_name: botName,
+      messages_processed: messagesProcessed,
+      error_count: errorCount,
+      last_error: lastError,
+      last_connection: lastConnectionTime,
+      last_disconnection: lastDisconnectionTime,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (e: any) {
+    // Silent fail for status updates
+  }
+}
+
+// Poll pending messages from Supabase (Vercel frontend can queue messages)
+let lastPollTime = new Date().toISOString();
+async function pollPendingMessages() {
+  if (!supabase || !isReady || !client) return;
+  try {
+    const { data, error } = await supabase
+      .from('whatsapp_messages')
+      .select('*')
+      .eq('direction', 'outgoing')
+      .eq('status', 'pending')
+      .lte('created_at', new Date().toISOString())
+      .order('created_at', { ascending: true })
+      .limit(5);
+
+    if (error || !data || data.length === 0) return;
+
+    for (const msg of data) {
+      try {
+        const digits = msg.phone.replace(/\D/g, '');
+        const cleanPhone = digits.startsWith('55') ? digits : `55${digits}`;
+        await client.sendMessage(`${cleanPhone}@c.us`, msg.message);
+        await supabase
+          .from('whatsapp_messages')
+          .update({ status: 'sent', sent_at: new Date().toISOString() })
+          .eq('id', msg.id);
+        messagesProcessed++;
+        log(`MSG PENDENTE ENVIADA para ${cleanPhone}`);
+      } catch (e: any) {
+        await supabase
+          .from('whatsapp_messages')
+          .update({ status: 'failed', error_message: e.message })
+          .eq('id', msg.id);
+        log(`ERRO ao enviar msg pendente: ${e.message}`);
+        errorCount++;
+      }
+    }
+  } catch (e: any) {
+    // Silent fail for polling
+  }
 }
 
 // ========== EXPRESS ==========
