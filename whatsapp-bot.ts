@@ -19,12 +19,6 @@ const SUPABASE_KEY = 'sb_publishable_8f5E5FprlK2rjTYEDCktpg_T67mntBa';
 
 // ========== SUPABASE ==========
 let supabase: SupabaseClient | null = null;
-try {
-  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  log('Supabase conectado - sincronizacao ativa');
-} catch (e: any) {
-  log('Erro ao conectar Supabase: ' + e.message);
-}
 
 // ========== STATE ==========
 let client: any = null;
@@ -43,6 +37,14 @@ let errorCount = 0;
 let startTime = new Date().toISOString();
 let connectionLogs: string[] = [];
 let pendingReconnect: ReturnType<typeof setTimeout> | null = null;
+
+// Init Supabase AFTER state vars (log() needs connectionLogs)
+try {
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  log('Supabase conectado - sincronizacao ativa');
+} catch (e: any) {
+  log('Erro ao conectar Supabase: ' + e.message);
+}
 
 // ========== LOGGING ==========
 function log(msg: string) {
