@@ -371,7 +371,8 @@ async function handleMessage(msg: any): Promise<void> {
 
     await handleConversation(phone, name, message, msg);
   } catch (e: any) {
-    log(`Erro ao processar msg: ${e.message}`);
+    log(`Erro ao processar msg: ${e.message || e}`);
+    log(`Stack: ${e.stack || 'none'}`);
     errorCount++;
   }
 }
