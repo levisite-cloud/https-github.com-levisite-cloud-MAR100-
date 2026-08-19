@@ -210,6 +210,17 @@ export const ConfiguracoesView: React.FC = () => {
   const BOT_URL = 'http://localhost:3001';
 
   const fetchBotStatus = useCallback(async () => {
+    if (!isLocalEnv) {
+      setBotStatus((prev) => ({
+        ...prev,
+        isReady: false,
+        isConnecting: false,
+        hasQr: false,
+        qrCode: null,
+        lastError: null,
+      }));
+      return;
+    }
     try {
       const res = await fetch(`${BOT_URL}/api/bot/status`);
       if (res.ok) {
@@ -228,7 +239,7 @@ export const ConfiguracoesView: React.FC = () => {
       }));
       setLastSyncTime(new Date().toISOString());
     }
-  }, []);
+  }, [isLocalEnv]);
 
   useEffect(() => {
     fetchBotStatus();
