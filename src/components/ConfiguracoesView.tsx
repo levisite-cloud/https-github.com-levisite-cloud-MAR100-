@@ -177,6 +177,10 @@ export const ConfiguracoesView: React.FC = () => {
   const [botLoading, setBotLoading] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [syncActive, setSyncActive] = useState(true);
+  const [isLocalEnv, setIsLocalEnv] = useState(() => {
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+  });
   const botIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const formatUptime = (seconds: number) => {
