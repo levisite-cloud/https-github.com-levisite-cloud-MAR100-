@@ -627,7 +627,30 @@ function initializeClient() {
     botNumber = null; botName = null; qrCode = null; qrCodeBase64 = null; scheduleReconnect();
   });
 
-  client.on('message', async (msg: any) => { await handleMessage(msg); });
+  client.on('message', async (msg: any) => { 
+    try {
+      const chat = await msg.getChat();
+      const contact = await msg.getContact();
+      const name = contact.pushname || contact.name || 'Desconhecido';
+      const phone = chat.id.user;
+      const message = msg.body;
+      messagesProcessed++;
+      log(`MSG ${name} (${phone}): ${message}`);
+      await saveIncomingMessage(phone, name, message);
+      await updateBotStatus();
+
+      const conv = userConversations[phone];
+      if (conv && Date.now() - conv.timestamp < 300000) {
+        await handleConversationStep(phone, name, message, msg, conv);
+        return;
+      }
+
+      await handleConversation(phone, name, message, msg);
+    } catch (e: any) {
+      log(`ERRO handler: ${e.message || e} | stack: ${e.stack?.substring(0, 200) || 'none'}`);
+      errorCount++;
+    }
+  });
 
   client.on('error', (err: any) => {
     const errMsg = err?.message || String(err);
