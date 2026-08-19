@@ -430,6 +430,7 @@ app.post('/api/bot/orcamento', async (req, res) => {
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
     messagesProcessed++;
     log(`ORCAMENTO enviado para ${cleanPhone}`);
+    await saveOutgoingMessage(cleanPhone, message, 'orcamento');
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
     errorCount++;
@@ -458,6 +459,7 @@ app.post('/api/bot/visita', async (req, res) => {
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
     messagesProcessed++;
     log(`VISITA enviada para ${cleanPhone}`);
+    await saveOutgoingMessage(cleanPhone, message, 'visita');
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
     errorCount++;
@@ -483,6 +485,7 @@ app.post('/api/bot/producao', async (req, res) => {
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
     messagesProcessed++;
     log(`PRODUCAO enviada para ${cleanPhone}`);
+    await saveOutgoingMessage(cleanPhone, message, 'producao');
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
     errorCount++;
@@ -509,6 +512,7 @@ app.post('/api/bot/instalacao', async (req, res) => {
     const sent = await client.sendMessage(`${cleanPhone}@c.us`, message);
     messagesProcessed++;
     log(`INSTALACAO enviada para ${cleanPhone}`);
+    await saveOutgoingMessage(cleanPhone, message, 'instalacao');
     res.json({ success: true, messageId: sent.id.id });
   } catch (e: any) {
     errorCount++;
@@ -547,6 +551,7 @@ app.post('/api/bot/disconnect', async (_req, res) => {
       botName = null;
       lastDisconnectionTime = new Date().toISOString();
       log('Desconectado pelo usuario (sem auto-restart)');
+      await updateBotStatus();
     }
     res.json({ success: true });
   } catch (e: any) {
@@ -555,7 +560,7 @@ app.post('/api/bot/disconnect', async (_req, res) => {
 });
 
 // Reconexao manual
-app.post('/api/bot/reconnect', (_req, res) => {
+app.post('/api/bot/reconnect', async (_req, res) => {
   if (isReady) {
     return res.json({ success: true, message: 'Bot ja esta conectado' });
   }
@@ -563,6 +568,7 @@ app.post('/api/bot/reconnect', (_req, res) => {
   lastError = null;
   log('Reconectando manualmente...');
   initializeClient();
+  await updateBotStatus();
   res.json({ success: true, message: 'Reconexao iniciada' });
 });
 
@@ -595,5 +601,13 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`  POST /api/bot/disconnect`);
   console.log(`  POST /api/bot/reconnect`);
   console.log('');
+  console.log(`  Sync Supabase: ATIVO (a cada 5s)`);
+  console.log(`  Vercel: https://https-github-com-levisite-cloud-mar.vercel.app/`);
+  console.log('');
   initializeClient();
+
+  // Poll pending messages from Supabase every 5s
+  setInterval(pollPendingMessages, 5000);
+  // Update bot status in Supabase every 10s
+  setInterval(updateBotStatus, 10000);
 });
