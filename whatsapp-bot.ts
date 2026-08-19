@@ -114,17 +114,19 @@ async function findClientByPhone(phone: string): Promise<any | null> {
   if (!supabase) return null;
   try {
     const clean = phone.replace(/\D/g, '');
-    const variants = [clean, `+${clean}`, `55${clean}`, clean.substring(clean.length - 11)];
-    const { data } = await supabase.from('atendimentos').select('*').or(
-      variants.map(v => `telefone.ilike.%${v}%`).join(',')
-    );
-    if (data && data.length > 0) return data[0];
-
+    const last9 = clean.slice(-9);
     const last10 = clean.slice(-10);
-    const { data: d2 } = await supabase.from('atendimentos').select('*').or(
-      `telefone.ilike.%${last10}%,telefone.ilike.%${clean}%`
-    );
-    return d2 && d2.length > 0 ? d2[0] : null;
+
+    const { data: d1 } = await supabase.from('atendimentos').select('*').ilike('telefone', `%${last9}%`).limit(1);
+    if (d1 && d1.length > 0) return d1[0];
+
+    const { data: d2 } = await supabase.from('atendimentos').select('*').ilike('telefone', `%${last10}%`).limit(1);
+    if (d2 && d2.length > 0) return d2[0];
+
+    const { data: d3 } = await supabase.from('atendimentos').select('*').ilike('telefone', `%${clean}%`).limit(1);
+    if (d3 && d3.length > 0) return d3[0];
+
+    return null;
   } catch { return null; }
 }
 
