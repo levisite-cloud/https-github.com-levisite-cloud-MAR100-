@@ -8,16 +8,8 @@ coverage/
 .env.local
 .env.production
 !.env.example
-whatsapp-session/
-.whatsapp-session/
-whatsapp-session/
-wwebjs_auth/
-wwebjs_cache/
-.wwebjs_cache/
 firebase-applet-config.json
 firebase-blueprint.json
 sync-log.txt
-bot-logs.log
 auto-sync.cjs
 auto-sync.bat
-start-bot.bat
