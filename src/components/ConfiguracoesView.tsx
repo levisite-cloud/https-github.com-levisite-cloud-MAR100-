@@ -181,6 +181,9 @@ export const ConfiguracoesView: React.FC = () => {
     const host = window.location.hostname;
     return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
   });
+  const [customBotUrl, setCustomBotUrl] = useState(() => {
+    return localStorage.getItem('marmoraria_bot_url') || '';
+  });
   const botIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const formatUptime = (seconds: number) => {
@@ -207,10 +210,20 @@ export const ConfiguracoesView: React.FC = () => {
     return new Date(iso).toLocaleString('pt-BR');
   };
 
-  const BOT_URL = 'http://localhost:3001';
+  const getBotUrl = () => {
+    if (isLocalEnv) return 'http://localhost:3001';
+    return customBotUrl || '';
+  };
+  const BOT_URL = getBotUrl();
+  const hasBotUrl = Boolean(BOT_URL);
+
+  const saveCustomBotUrl = (url: string) => {
+    setCustomBotUrl(url);
+    localStorage.setItem('marmoraria_bot_url', url);
+  };
 
   const fetchBotStatus = useCallback(async () => {
-    if (!isLocalEnv) {
+    if (!hasBotUrl) {
       setBotStatus((prev) => ({
         ...prev,
         isReady: false,
@@ -239,7 +252,7 @@ export const ConfiguracoesView: React.FC = () => {
       }));
       setLastSyncTime(new Date().toISOString());
     }
-  }, [isLocalEnv]);
+  }, [hasBotUrl, BOT_URL]);
 
   useEffect(() => {
     fetchBotStatus();
@@ -663,9 +676,9 @@ export const ConfiguracoesView: React.FC = () => {
                 <div>
                   <h2 className="text-sm font-black text-zinc-100 flex items-center gap-2">
                     <span>WhatsApp Bot</span>
-                    {!isLocalEnv ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-blue-500/10 text-blue-400 border-blue-500/30">
-                        🌐 Remoto
+                    {!hasBotUrl && !isLocalEnv ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-zinc-500/10 text-zinc-400 border-zinc-500/30">
+                        ⚪ Sem URL
                       </span>
                     ) : botStatus.isReady ? (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-green-500/10 text-green-400 border-green-500/30">
@@ -682,8 +695,8 @@ export const ConfiguracoesView: React.FC = () => {
                     )}
                   </h2>
                   <p className="text-[11px] text-zinc-400">
-                    {!isLocalEnv
-                      ? 'Bot rodando apenas no computador local. Acesse http://localhost:3000 para monitorar.'
+                    {!hasBotUrl && !isLocalEnv
+                      ? 'Configure a URL do túnel para monitorar remotamente.'
                       : botStatus.isReady
                       ? `Conectado como ${botStatus.name || botStatus.number || 'WhatsApp'}`
                       : botStatus.isConnecting
@@ -693,8 +706,26 @@ export const ConfiguracoesView: React.FC = () => {
                 </div>
               </div>
 
-              {isLocalEnv && (
+              {(isLocalEnv || hasBotUrl) && (
                 <div className="flex items-center gap-2">
+                  {!isLocalEnv && hasBotUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        saveCustomBotUrl('');
+                        setBotStatus({
+                          isReady: false, isConnecting: false, hasQr: false, qrCode: null,
+                          number: null, name: null, lastConnectionTime: null, lastDisconnectionTime: null,
+                          lastError: null, messagesProcessed: 0, errorCount: 0, reconnectAttempts: 0,
+                          uptime: 0, logs: [],
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-amber-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Remover URL</span>
+                    </button>
+                  )}
                   {!botStatus.isReady && !botStatus.isConnecting && (
                     <button
                       type="button"
@@ -722,17 +753,32 @@ export const ConfiguracoesView: React.FC = () => {
             </div>
 
             <div className="space-y-4 relative z-10">
-              {!isLocalEnv ? (
+              {!isLocalEnv && !hasBotUrl ? (
                 <div className="text-center py-6 space-y-3">
                   <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto text-blue-400">
                     <Cloud className="w-8 h-8" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-zinc-300">Bot disponível apenas localmente</p>
-                    <p className="text-[11px] text-zinc-500 max-w-sm mx-auto leading-relaxed">
-                      O WhatsApp Bot roda no computador onde o <span className="font-mono text-zinc-400">INICIAR_BOT.bat</span> foi executado.
-                      Para monitorar o status, acesse <span className="font-mono text-zinc-400">http://localhost:3000</span> na mesma máquina.
+                    <p className="text-sm font-bold text-zinc-300">Configure a URL do Bot</p>
+                    <p className="text-[11px] text-zinc-500 max-w-sm mx-auto leading-relaxed mb-4">
+                      Para monitorar o bot remotamente, insira a URL do túnel (ex: Cloudflare Tunnel, ngrok).
                     </p>
+                    <div className="flex items-center gap-2 max-w-md mx-auto">
+                      <input
+                        type="text"
+                        value={customBotUrl}
+                        onChange={(e) => setCustomBotUrl(e.target.value)}
+                        placeholder="https://seu-tunel.trycloudflare.com"
+                        className="flex-1 text-xs font-mono bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-green-400 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => saveCustomBotUrl(customBotUrl)}
+                        className="px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                      >
+                        Conectar
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : botStatus.isReady ? (
