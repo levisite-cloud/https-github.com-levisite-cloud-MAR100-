@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Building2,
@@ -13,7 +13,6 @@ import {
   FileText,
   Sparkles,
   RefreshCw,
-  QrCode,
   Search,
   Loader2,
   AlertTriangle,
@@ -28,7 +27,6 @@ import {
   Layers,
   Code2,
   GitBranch,
-  MessageCircle,
 } from 'lucide-react';
 import { maskCpfCnpj, maskPhone } from '../utils/formatters';
 import { DEFAULT_EMPRESA_CONFIG } from '../data/initialData';
@@ -152,138 +150,12 @@ export const ConfiguracoesView: React.FC = () => {
   const [copiedSql, setCopiedSql] = useState(false);
   const [showSqlCode, setShowSqlCode] = useState(false);
 
-  // WhatsApp Bot states - complete monitoring
-  const [botStatus, setBotStatus] = useState<{
-    isReady: boolean;
-    isConnecting: boolean;
-    hasQr: boolean;
-    qrCode: string | null;
-    number: string | null;
-    name: string | null;
-    lastConnectionTime: string | null;
-    lastDisconnectionTime: string | null;
-    lastError: string | null;
-    messagesProcessed: number;
-    errorCount: number;
-    reconnectAttempts: number;
-    uptime: number;
-    logs: string[];
-  }>({
-    isReady: false, isConnecting: false, hasQr: false, qrCode: null,
-    number: null, name: null, lastConnectionTime: null, lastDisconnectionTime: null,
-    lastError: null, messagesProcessed: 0, errorCount: 0, reconnectAttempts: 0,
-    uptime: 0, logs: [],
-  });
-  const [botLoading, setBotLoading] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [syncActive, setSyncActive] = useState(true);
-  const [isLocalEnv, setIsLocalEnv] = useState(() => {
-    const host = window.location.hostname;
-    return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
-  });
-  const [customBotUrl, setCustomBotUrl] = useState(() => {
-    return localStorage.getItem('marmoraria_bot_url') || '';
-  });
-  const botIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const formatUptime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) return `${h}h ${m}m ${s}s`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
-  };
-
-  const formatTimeAgo = (iso: string | null) => {
-    if (!iso) return 'Nunca';
-    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-    if (diff < 5) return 'Agora';
-    if (diff < 60) return `${diff}s atrás`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m atrás`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h atrás`;
-    return new Date(iso).toLocaleString('pt-BR');
-  };
 
   const formatDateTime = (iso: string | null) => {
     if (!iso) return 'N/A';
     return new Date(iso).toLocaleString('pt-BR');
-  };
-
-  const getBotUrl = () => {
-    if (isLocalEnv) return 'http://localhost:3001';
-    return customBotUrl || '';
-  };
-  const BOT_URL = getBotUrl();
-  const hasBotUrl = Boolean(BOT_URL);
-
-  const saveCustomBotUrl = (url: string) => {
-    setCustomBotUrl(url);
-    localStorage.setItem('marmoraria_bot_url', url);
-  };
-
-  const fetchBotStatus = useCallback(async () => {
-    if (!hasBotUrl) {
-      setBotStatus((prev) => ({
-        ...prev,
-        isReady: false,
-        isConnecting: false,
-        hasQr: false,
-        qrCode: null,
-        lastError: null,
-      }));
-      return;
-    }
-    try {
-      const res = await fetch(`${BOT_URL}/api/bot/status`);
-      if (res.ok) {
-        const data = await res.json();
-        setBotStatus(data);
-        setLastSyncTime(new Date().toISOString());
-      }
-    } catch {
-      setBotStatus((prev) => ({
-        ...prev,
-        isReady: false,
-        isConnecting: false,
-        hasQr: false,
-        qrCode: null,
-        lastError: 'Bot process not running on port 3001',
-      }));
-      setLastSyncTime(new Date().toISOString());
-    }
-  }, [hasBotUrl, BOT_URL]);
-
-  useEffect(() => {
-    fetchBotStatus();
-    botIntervalRef.current = setInterval(fetchBotStatus, 5000);
-    return () => { if (botIntervalRef.current) clearInterval(botIntervalRef.current); };
-  }, [fetchBotStatus]);
-
-  const handleDisconnectBot = async () => {
-    setBotLoading(true);
-    try {
-      await fetch(`${BOT_URL}/api/bot/disconnect`, { method: 'POST' });
-      setTimeout(fetchBotStatus, 2000);
-      addToast('WhatsApp Desconectado', 'O bot foi desconectado do WhatsApp.', 'info');
-    } catch {
-      addToast('Erro', 'Não foi possível desconectar o bot. Verifique se o processo está rodando.', 'error');
-    } finally {
-      setBotLoading(false);
-    }
-  };
-
-  const handleReconnectBot = async () => {
-    setBotLoading(true);
-    try {
-      await fetch(`${BOT_URL}/api/bot/reconnect`, { method: 'POST' });
-      addToast('Reconectando', 'Tentativa de reconexão iniciada...', 'info');
-      setTimeout(fetchBotStatus, 3000);
-    } catch {
-      addToast('Erro', 'Não foi possível reconectar o bot.', 'error');
-    } finally {
-      setBotLoading(false);
-    }
   };
 
   const handleExecuteReset = () => {
@@ -663,213 +535,6 @@ export const ConfiguracoesView: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* PAINEL WHATSAPP BOT - MONITORAMENTO COMPLETO */}
-          {/* ========================================================================= */}
-          <div className="bg-zinc-900 rounded-2xl p-6 border border-green-500/30 shadow-xl space-y-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl -z-0 pointer-events-none" />
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4 relative z-10">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 shadow-sm">
-                  <MessageCircle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-zinc-100 flex items-center gap-2">
-                    <span>WhatsApp Bot</span>
-                    {!hasBotUrl && !isLocalEnv ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-zinc-500/10 text-zinc-400 border-zinc-500/30">
-                        ⚪ Sem URL
-                      </span>
-                    ) : botStatus.isReady ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-green-500/10 text-green-400 border-green-500/30">
-                        🟢 Conectado
-                      </span>
-                    ) : botStatus.isConnecting ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
-                        🟡 Conectando
-                      </span>
-                    ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-zinc-500/10 text-zinc-400 border-zinc-500/30">
-                        ⚪ Off
-                      </span>
-                    )}
-                  </h2>
-                  <p className="text-[11px] text-zinc-400">
-                    {!hasBotUrl && !isLocalEnv
-                      ? 'Configure a URL do túnel para monitorar remotamente.'
-                      : botStatus.isReady
-                      ? `Conectado como ${botStatus.name || botStatus.number || 'WhatsApp'}`
-                      : botStatus.isConnecting
-                      ? 'Estabelecendo conexão com WhatsApp...'
-                      : 'Execute INICIAR_BOT.bat ou npm run bot para iniciar.'}
-                  </p>
-                </div>
-              </div>
-
-              {(isLocalEnv || hasBotUrl) && (
-                <div className="flex items-center gap-2">
-                  {!isLocalEnv && hasBotUrl && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        saveCustomBotUrl('');
-                        setBotStatus({
-                          isReady: false, isConnecting: false, hasQr: false, qrCode: null,
-                          number: null, name: null, lastConnectionTime: null, lastDisconnectionTime: null,
-                          lastError: null, messagesProcessed: 0, errorCount: 0, reconnectAttempts: 0,
-                          uptime: 0, logs: [],
-                        });
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-amber-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Remover URL</span>
-                    </button>
-                  )}
-                  {!botStatus.isReady && !botStatus.isConnecting && (
-                    <button
-                      type="button"
-                      disabled={botLoading}
-                      onClick={handleReconnectBot}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${botLoading ? 'animate-spin' : ''}`} />
-                      <span>Reconectar</span>
-                    </button>
-                  )}
-                  {botStatus.isReady && (
-                    <button
-                      type="button"
-                      disabled={botLoading}
-                      onClick={handleDisconnectBot}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-rose-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Desconectar</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4 relative z-10">
-              {!isLocalEnv && !hasBotUrl ? (
-                <div className="text-center py-6 space-y-3">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto text-blue-400">
-                    <Cloud className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-zinc-300">Configure a URL do Bot</p>
-                    <p className="text-[11px] text-zinc-500 max-w-sm mx-auto leading-relaxed mb-4">
-                      Para monitorar o bot remotamente, insira a URL do túnel (ex: Cloudflare Tunnel, ngrok).
-                    </p>
-                    <div className="flex items-center gap-2 max-w-md mx-auto">
-                      <input
-                        type="text"
-                        value={customBotUrl}
-                        onChange={(e) => setCustomBotUrl(e.target.value)}
-                        placeholder="https://seu-tunel.trycloudflare.com"
-                        className="flex-1 text-xs font-mono bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-zinc-100 placeholder:text-zinc-500 focus:border-green-400 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => saveCustomBotUrl(customBotUrl)}
-                        className="px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                      >
-                        Conectar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : botStatus.isReady ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
-                    <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
-                      <CheckCircle2 className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-green-400">WhatsApp Conectado!</p>
-                      <p className="text-xs text-zinc-400">
-                        <span className="font-mono text-zinc-300">{botStatus.number}</span>
-                        {botStatus.name && <span className="ml-2">({botStatus.name})</span>}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Mensagens</p>
-                      <p className="text-lg font-black text-green-400">{botStatus.messagesProcessed}</p>
-                    </div>
-                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Erros</p>
-                      <p className="text-lg font-black text-zinc-300">{botStatus.errorCount}</p>
-                    </div>
-                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Uptime</p>
-                      <p className="text-lg font-black text-amber-400">{formatUptime(botStatus.uptime)}</p>
-                    </div>
-                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Reconexões</p>
-                      <p className="text-lg font-black text-zinc-300">{botStatus.reconnectAttempts}</p>
-                    </div>
-                  </div>
-                  <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
-                    <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Últimas Conexões</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-zinc-400">
-                      <span>🕐 Conectado: <span className="text-zinc-300">{formatDateTime(botStatus.lastConnectionTime)}</span></span>
-                      <span>🕐 Última sync: <span className="text-zinc-300">{formatTimeAgo(lastSyncTime)}</span></span>
-                    </div>
-                  </div>
-                </div>
-              ) : botStatus.hasQr && botStatus.qrCode ? (
-                <div className="flex flex-col items-center gap-4">
-                  <p className="text-xs text-zinc-400 text-center">
-                    Escaneie o QR Code abaixo com seu WhatsApp:
-                    <br />
-                    <span className="text-zinc-500">(WhatsApp {'>'} Dispositivos conectados {'>'} Conectar dispositivo)</span>
-                  </p>
-                  <div className="bg-white p-4 rounded-2xl shadow-xl">
-                    <img src={botStatus.qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
-                  </div>
-                  <p className="text-[10px] text-zinc-500 animate-pulse">Aguardando leitura do QR Code...</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="text-center py-4 space-y-3">
-                    <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
-                      <QrCode className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-zinc-300">
-                        {botStatus.isConnecting ? 'Conectando ao WhatsApp...' : 'Bot desconectado'}
-                      </p>
-                      <p className="text-[11px] text-zinc-500">
-                        {botStatus.isConnecting
-                          ? 'Aguarde enquanto o bot tenta se reconectar.'
-                          : 'Execute INICIAR_BOT.bat ou npm run bot para iniciar o bot.'}
-                      </p>
-                    </div>
-                  </div>
-                  {botStatus.lastError && (
-                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-xs">
-                      <p className="font-bold text-amber-400 mb-1">Status:</p>
-                      <p className="text-zinc-400 font-mono text-[11px]">{botStatus.lastError}</p>
-                    </div>
-                  )}
-                  {botStatus.logs.length > 0 && (
-                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800 max-h-32 overflow-y-auto">
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Logs de Conexão</p>
-                      {botStatus.logs.map((log, i) => (
-                        <p key={i} className="text-[10px] text-zinc-500 font-mono">{log}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ========================================================================= */}
           {/* PAINEL DE STATUS DO SISTEMA */}
           {/* ========================================================================= */}
           <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
@@ -883,28 +548,6 @@ export const ConfiguracoesView: React.FC = () => {
               </span>
             </h2>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="w-3.5 h-3.5 text-green-400" />
-                  <span className="text-zinc-300">WhatsApp</span>
-                </div>
-                <span className={`font-bold font-mono text-[11px] ${
-                  botStatus.isReady ? 'text-green-400' : botStatus.isConnecting ? 'text-yellow-400' : 'text-red-400'
-                }`}>
-                  {botStatus.isReady ? '🟢 CONECTADO' : botStatus.isConnecting ? '🟡 CONECTANDO' : '🔴 DESCONECTADO'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-3.5 h-3.5 text-green-400" />
-                  <span className="text-zinc-300">Bot</span>
-                </div>
-                <span className={`font-bold font-mono text-[11px] ${
-                  botStatus.isReady ? 'text-green-400' : botStatus.isConnecting ? 'text-yellow-400' : 'text-red-400'
-                }`}>
-                  {botStatus.isReady ? '🟢 ONLINE' : botStatus.isConnecting ? '🟡 STARTING' : '🔴 OFFLINE'}
-                </span>
-              </div>
               <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
                 <div className="flex items-center gap-2">
                   <Server className="w-3.5 h-3.5 text-emerald-400" />
