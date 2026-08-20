@@ -629,10 +629,22 @@ function initializeClient() {
 
   client.on('message', async (msg: any) => { 
     try {
-      const chat = await msg.getChat();
-      const contact = await msg.getContact();
-      const name = contact.pushname || contact.name || 'Desconhecido';
-      const phone = chat.id.user;
+      // Verify message has required properties
+      if (!msg || !msg.body) {
+        log('MSG recebida sem corpo - ignorando');
+        return;
+      }
+      
+      const chat = await msg.getChat().catch(e => { log('ERRO getChat: ' + e.message); return null; });
+      const contact = await msg.getContact().catch(e => { log('ERRO getContact: ' + e.message); return null; });
+      const name = contact?.pushname || contact?.name || 'Desconhecido';
+      const phone = chat?.id?.user || '';
+      
+      if (!phone) {
+        log('MSG sem número de telefone - ignorando');
+        return;
+      }
+      
       const message = msg.body;
       messagesProcessed++;
       log(`MSG ${name} (${phone}): ${message}`);
@@ -647,7 +659,7 @@ function initializeClient() {
 
       await handleConversation(phone, name, message, msg);
     } catch (e: any) {
-      log(`ERRO handler: ${e.message || e} | stack: ${e.stack?.substring(0, 200) || 'none'}`);
+      log(`ERRO handler message: ${e.message || e}`);
       errorCount++;
     }
   });
