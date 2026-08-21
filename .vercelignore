@@ -1,0 +1,9 @@
+node_modules/
+dist/
+test-session/
+whatsapp-session/
+.wwebjs_cache/
+*.log
+.env
+.env.local
+.env.production
