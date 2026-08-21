@@ -7,3 +7,8 @@ whatsapp-session/
 .env
 .env.local
 .env.production
+server.ts
+INICIAR*.bat
+GERENCIADOR.bat
+supabase_*.sql
+auto-sync.*

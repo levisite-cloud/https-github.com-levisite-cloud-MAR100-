@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 3000;
 let whatsappClient: any = null;
 let whatsappModule: any = null;
 let qrcodeModule: any = null;
+let isInitializing = false;
 
 let botStatus = {
   isReady: false,
@@ -41,7 +42,7 @@ const addLog = (msg: string) => {
   botStatus.logs.push(`[${timestamp}] ${msg}`);
   if (botStatus.logs.length > 50) botStatus.logs.shift();
   io.emit('bot:log', { timestamp, message: msg });
-  console.log(`[BOT] ${msg}`);
+  console.log(`[BOT ${timestamp}] ${msg}`);
 };
 
 const MENU = `Olá, seja bem-vindo à *Marmoraria Imperial*! 🏛️
@@ -68,14 +69,13 @@ const RESPOSTAS: Record<string, string> = {
 function handleAutoResponse(body: string): string | null {
   if (!body) return null;
   const lower = body.toLowerCase().trim();
-
   if (RESPOSTAS[body.trim()]) return RESPOSTAS[body.trim()];
   if (lower.includes('menu') || lower.includes('início')) return MENU;
   if (lower.match(/^(olá|ola|bom dia|boa tarde|boa noite|hi|hello)/)) {
     return `Olá! 👋 Bem-vindo à *Marmoraria Imperial*!\n\n${MENU}`;
   }
   if (lower.match(/obrigad[oa]/)) return 'De nada! 😊\n\nDigite 0 para voltar ao menu.';
-  if (lower.match(/^(tchau|até mais|bye)/)) return 'Até mais! 👋 Caso precise, é só chamar!\n\nDigite 0 para voltar ao menu.';
+  if (lower.match(/^(tchau|até mais|bye)/)) return 'Até mais! 👋\n\nDigite 0 para voltar ao menu.';
   return null;
 }
 
@@ -88,11 +88,24 @@ async function loadModules() {
   }
 }
 
-async function initializeWhatsApp() {
+async function disconnectWhatsApp() {
   if (whatsappClient) {
-    try { await whatsappClient.destroy(); } catch {}
+    try {
+      await whatsappClient.destroy();
+    } catch {}
     whatsappClient = null;
   }
+}
+
+async function initializeWhatsApp() {
+  if (isInitializing) {
+    addLog('Já está inicializando, aguarde...');
+    return;
+  }
+
+  isInitializing = true;
+
+  await disconnectWhatsApp();
 
   botStatus = {
     isReady: false, isConnecting: true, hasQr: false, qrCode: null,
@@ -109,32 +122,45 @@ async function initializeWhatsApp() {
     const { Client } = whatsappModule;
 
     whatsappClient = new Client({
+      authStrategy: undefined,
       puppeteer: {
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--no-first-run',
+        ],
       },
     });
 
     whatsappClient.on('qr', async (qr: string) => {
       addLog('QR Code recebido, gerando imagem...');
       try {
-        const qrImage = await qrcodeModule.toDataURL(qr, { width: 256 });
+        const qrImage = await qrcodeModule.toDataURL(qr, {
+          width: 300,
+          margin: 2,
+          color: { dark: '#000000', light: '#ffffff' },
+        });
         botStatus.hasQr = true;
         botStatus.qrCode = qrImage;
         botStatus.isConnecting = true;
         io.emit('bot:status', botStatus);
         io.emit('bot:qr', qrImage);
-        addLog('QR Code gerado com sucesso');
+        addLog('QR Code gerado com sucesso - ESCANEIE AGORA!');
       } catch (err) {
         addLog(`Erro ao gerar QR Code: ${err}`);
       }
     });
 
     whatsappClient.on('ready', async () => {
-      addLog('WhatsApp conectado!');
+      addLog('✅ WhatsApp CONECTADO com sucesso!');
       botStatus.isReady = true;
       botStatus.isConnecting = false;
       botStatus.hasQr = false;
+      botStatus.qrCode = null;
       botStatus.lastConnectionTime = new Date().toISOString();
       try {
         const info = whatsappClient.info;
@@ -149,22 +175,26 @@ async function initializeWhatsApp() {
       io.emit('bot:status', botStatus);
     });
 
-    whatsappClient.on('authenticated', () => addLog('Autenticado com sucesso'));
+    whatsappClient.on('authenticated', () => {
+      addLog('✅ Autenticado com sucesso');
+    });
 
     whatsappClient.on('auth_failure', (msg: string) => {
-      addLog(`Falha na autenticação: ${msg}`);
+      addLog(`❌ Falha na autenticação: ${msg}`);
       botStatus.lastError = `Auth failure: ${msg}`;
       botStatus.errorCount++;
+      botStatus.isConnecting = false;
       io.emit('bot:status', botStatus);
     });
 
     whatsappClient.on('disconnected', (reason: string) => {
-      addLog(`Desconectado: ${reason}`);
+      addLog(`⚠️ Desconectado: ${reason}`);
       botStatus.isReady = false;
       botStatus.isConnecting = false;
       botStatus.lastDisconnectionTime = new Date().toISOString();
       botStatus.lastError = `Disconnected: ${reason}`;
       io.emit('bot:status', botStatus);
+      isInitializing = false;
       setTimeout(() => {
         addLog('Tentando reconexão automática...');
         botStatus.reconnectAttempts++;
@@ -176,24 +206,29 @@ async function initializeWhatsApp() {
       botStatus.messagesProcessed++;
       io.emit('bot:status', botStatus);
       io.emit('bot:message', { from: msg.from, body: msg.body, timestamp: new Date().toISOString() });
+      addLog(`📩 Mensagem de ${msg.from}: ${msg.body}`);
       const response = handleAutoResponse(msg.body);
       if (response) {
         try {
           await msg.reply(response);
-          addLog(`Resposta automática enviada para ${msg.from}`);
+          addLog(`✅ Resposta automática enviada para ${msg.from}`);
         } catch (err) {
-          addLog(`Erro ao enviar resposta: ${err}`);
+          addLog(`❌ Erro ao enviar resposta: ${err}`);
         }
       }
     });
 
+    addLog('Inicializando WhatsApp Web...');
     await whatsappClient.initialize();
+    addLog('WhatsApp Web inicializado, aguardando QR Code...');
   } catch (err) {
-    addLog(`Erro ao inicializar: ${err}`);
+    addLog(`❌ Erro ao inicializar: ${err}`);
     botStatus.lastError = `Init error: ${String(err)}`;
     botStatus.errorCount++;
     botStatus.isConnecting = false;
     io.emit('bot:status', botStatus);
+  } finally {
+    isInitializing = false;
   }
 }
 
@@ -207,6 +242,7 @@ app.get('/api/bot/status', (_req, res) => {
 
 app.post('/api/bot/connect', async (_req, res) => {
   try {
+    addLog('Recebido pedido de conexão...');
     initializeWhatsApp();
     res.json({ success: true, message: 'Conexão iniciada' });
   } catch (err) {
@@ -216,12 +252,10 @@ app.post('/api/bot/connect', async (_req, res) => {
 
 app.post('/api/bot/disconnect', async (_req, res) => {
   try {
-    if (whatsappClient) {
-      await whatsappClient.destroy();
-      whatsappClient = null;
-    }
+    await disconnectWhatsApp();
     botStatus.isReady = false;
     botStatus.isConnecting = false;
+    botStatus.hasQr = false;
     botStatus.qrCode = null;
     botStatus.number = null;
     botStatus.name = null;
@@ -258,7 +292,7 @@ io.on('connection', (socket) => {
 async function start() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { 
+      server: {
         middlewareMode: true,
         hmr: false,
       },
@@ -282,8 +316,11 @@ async function start() {
     console.log(`  📡 Bot API:  http://localhost:${PORT}/api/bot/status`);
     console.log('===========================================');
     console.log('');
-    console.log('  O bot NÃO inicia automaticamente.');
-    console.log('  Clique "Conectar WhatsApp" no painel.');
+    console.log('  Para conectar o WhatsApp:');
+    console.log('  1. Acesse http://localhost:3000');
+    console.log('  2. Vá em Configurações > WhatsApp');
+    console.log('  3. Clique em "Conectar WhatsApp"');
+    console.log('  4. Escaneie o QR Code');
     console.log('');
   });
 }
