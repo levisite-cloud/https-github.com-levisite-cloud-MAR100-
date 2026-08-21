@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { io } from 'socket.io-client';
 import {
   Building2,
   Palette,
@@ -18,6 +19,8 @@ import {
   AlertTriangle,
   Database,
   ShieldAlert,
+  MessageCircle,
+  QrCode,
   X,
   Copy,
   ExternalLink,
@@ -152,6 +155,87 @@ export const ConfiguracoesView: React.FC = () => {
 
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [syncActive, setSyncActive] = useState(true);
+
+  // WhatsApp Bot states
+  const [botStatus, setBotStatus] = useState<{
+    isReady: boolean;
+    isConnecting: boolean;
+    hasQr: boolean;
+    qrCode: string | null;
+    number: string | null;
+    name: string | null;
+    profilePic: string | null;
+    lastConnectionTime: string | null;
+    lastDisconnectionTime: string | null;
+    lastError: string | null;
+    messagesProcessed: number;
+    errorCount: number;
+    reconnectAttempts: number;
+    uptime: number;
+    logs: string[];
+  }>({
+    isReady: false, isConnecting: false, hasQr: false, qrCode: null,
+    number: null, name: null, profilePic: null,
+    lastConnectionTime: null, lastDisconnectionTime: null,
+    lastError: null, messagesProcessed: 0, errorCount: 0,
+    reconnectAttempts: 0, uptime: 0, logs: [],
+  });
+  const [botLoading, setBotLoading] = useState(false);
+  const socketRef = useRef<any>(null);
+
+  useEffect(() => {
+    const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
+    socketRef.current = socket;
+
+    socket.on('bot:status', (status: any) => setBotStatus(status));
+    socket.on('bot:qr', () => {});
+    socket.on('bot:log', () => {});
+
+    return () => { socket.disconnect(); };
+  }, []);
+
+  const handleConnectBot = async () => {
+    setBotLoading(true);
+    try {
+      await fetch('/api/bot/connect', { method: 'POST' });
+      addToast('Conectando', 'Iniciando conexão com WhatsApp...', 'info');
+    } catch {
+      addToast('Erro', 'Não foi possível iniciar a conexão.', 'error');
+    } finally {
+      setBotLoading(false);
+    }
+  };
+
+  const handleDisconnectBot = async () => {
+    setBotLoading(true);
+    try {
+      await fetch('/api/bot/disconnect', { method: 'POST' });
+      addToast('Desconectado', 'WhatsApp desconectado.', 'info');
+    } catch {
+      addToast('Erro', 'Não foi possível desconectar.', 'error');
+    } finally {
+      setBotLoading(false);
+    }
+  };
+
+  const formatUptime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
+
+  const formatTimeAgo = (iso: string | null) => {
+    if (!iso) return 'Nunca';
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (diff < 5) return 'Agora';
+    if (diff < 60) return `${diff}s atrás`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m atrás`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h atrás`;
+    return new Date(iso).toLocaleString('pt-BR');
+  };
 
   const formatDateTime = (iso: string | null) => {
     if (!iso) return 'N/A';
@@ -535,6 +619,166 @@ export const ConfiguracoesView: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
+          {/* PAINEL WHATSAPP - INTEGRAÇÃO */}
+          {/* ========================================================================= */}
+          <div className="bg-zinc-900 rounded-2xl p-6 border border-green-500/30 shadow-xl space-y-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl -z-0 pointer-events-none" />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4 relative z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 shadow-sm">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-zinc-100 flex items-center gap-2">
+                    <span>WhatsApp Bot</span>
+                    {botStatus.isReady ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-green-500/10 text-green-400 border-green-500/30">
+                        🟢 Conectado
+                      </span>
+                    ) : botStatus.isConnecting ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
+                        🟡 Conectando
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-zinc-500/10 text-zinc-400 border-zinc-500/30">
+                        ⚪ Off
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-[11px] text-zinc-400">
+                    {botStatus.isReady
+                      ? `Conectado como ${botStatus.name || botStatus.number || 'WhatsApp'}`
+                      : botStatus.isConnecting
+                      ? 'Estabelecendo conexão com WhatsApp...'
+                      : 'Clique em "Conectar" para iniciar o bot.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!botStatus.isReady && !botStatus.isConnecting && (
+                  <button
+                    type="button"
+                    disabled={botLoading}
+                    onClick={handleConnectBot}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    {botLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
+                    <span>Conectar WhatsApp</span>
+                  </button>
+                )}
+                {botStatus.isReady && (
+                  <button
+                    type="button"
+                    disabled={botLoading}
+                    onClick={handleDisconnectBot}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-rose-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Desconectar</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4 relative z-10">
+              {/* QR Code Display */}
+              {botStatus.hasQr && botStatus.qrCode && (
+                <div className="flex flex-col items-center gap-4">
+                  <p className="text-xs text-zinc-400 text-center">
+                    Escaneie o QR Code abaixo com seu WhatsApp:
+                    <br />
+                    <span className="text-zinc-500">(WhatsApp {'>'} Dispositivos conectados {'>'} Conectar dispositivo)</span>
+                  </p>
+                  <div className="bg-white p-4 rounded-2xl shadow-xl">
+                    <img src={botStatus.qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
+                  </div>
+                  <p className="text-[10px] text-zinc-500 animate-pulse">Aguardando leitura do QR Code...</p>
+                </div>
+              )}
+
+              {/* Connected Status */}
+              {botStatus.isReady && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
+                    {botStatus.profilePic ? (
+                      <img src={botStatus.profilePic} alt="Profile" className="w-12 h-12 rounded-xl" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-bold text-green-400">WhatsApp Conectado!</p>
+                      <p className="text-xs text-zinc-400">
+                        <span className="font-mono text-zinc-300">{botStatus.number}</span>
+                        {botStatus.name && <span className="ml-2">({botStatus.name})</span>}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Mensagens</p>
+                      <p className="text-lg font-black text-green-400">{botStatus.messagesProcessed}</p>
+                    </div>
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Erros</p>
+                      <p className="text-lg font-black text-zinc-300">{botStatus.errorCount}</p>
+                    </div>
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Reconexões</p>
+                      <p className="text-lg font-black text-amber-400">{botStatus.reconnectAttempts}</p>
+                    </div>
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Última Sync</p>
+                      <p className="text-[11px] font-bold text-zinc-300">{formatTimeAgo(botStatus.lastConnectionTime)}</p>
+                    </div>
+                  </div>
+
+                  {/* Logs */}
+                  {botStatus.logs.length > 0 && (
+                    <div className="bg-zinc-850 rounded-xl p-3 border border-zinc-800 max-h-32 overflow-y-auto">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Logs</p>
+                      {botStatus.logs.slice(-5).map((log, i) => (
+                        <p key={i} className="text-[10px] text-zinc-500 font-mono">{log}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Disconnected/Connecting State */}
+              {!botStatus.isReady && !botStatus.hasQr && (
+                <div className="text-center py-6 space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+                    <MessageCircle className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-zinc-300">
+                      {botStatus.isConnecting ? 'Conectando ao WhatsApp...' : 'Bot desconectado'}
+                    </p>
+                    <p className="text-[11px] text-zinc-500">
+                      {botStatus.isConnecting
+                        ? 'Aguarde enquanto o bot tenta se conectar.'
+                        : 'Clique em "Conectar WhatsApp" para iniciar.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Display */}
+              {botStatus.lastError && !botStatus.isReady && (
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-xs">
+                  <p className="font-bold text-amber-400 mb-1">Último Erro:</p>
+                  <p className="text-zinc-400 font-mono text-[11px]">{botStatus.lastError}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
           {/* PAINEL DE STATUS DO SISTEMA */}
           {/* ========================================================================= */}
           <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
@@ -554,6 +798,17 @@ export const ConfiguracoesView: React.FC = () => {
                   <span className="text-zinc-300">Backend</span>
                 </div>
                 <span className="font-bold font-mono text-[11px] text-green-400">🟢 ONLINE</span>
+              </div>
+              <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-3.5 h-3.5 text-green-400" />
+                  <span className="text-zinc-300">WhatsApp</span>
+                </div>
+                <span className={`font-bold font-mono text-[11px] ${
+                  botStatus.isReady ? 'text-green-400' : botStatus.isConnecting ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {botStatus.isReady ? '🟢 CONECTADO' : botStatus.isConnecting ? '🟡 CONECTANDO' : '🔴 DESCONECTADO'}
+                </span>
               </div>
               <div className="flex items-center justify-between text-xs p-2 bg-zinc-850 rounded-lg border border-zinc-800">
                 <div className="flex items-center gap-2">
