@@ -9,6 +9,7 @@ coverage/
 .env.production
 !.env.example
 .wwebjs_cache/
+.wwebjs_auth/
 whatsapp-session/
 firebase-applet-config.json
 firebase-blueprint.json

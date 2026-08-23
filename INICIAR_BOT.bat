@@ -27,9 +27,6 @@ if not exist "node_modules" (
     echo.
 )
 
-:: Criar pasta de sessao
-if not exist "whatsapp-session" mkdir whatsapp-session
-
 echo [OK] Bot iniciado com sucesso!
 echo [INFO] QR Code aparecera no navegador
 echo [INFO] Escaneie com o WhatsApp

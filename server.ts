@@ -6,7 +6,7 @@ import { createServer as createViteServer } from 'vite';
 import fs from 'fs';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const app = express();
 const httpServer = createServer(app);

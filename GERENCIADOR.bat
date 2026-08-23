@@ -32,6 +32,7 @@ if not exist "node_modules" (
     echo.
 )
 
+:menu
 echo ========================================
 echo   OPCOES:
 echo ========================================
@@ -54,7 +55,7 @@ if "%opcao%"=="6" goto :sair
 
 echo [ERRO] Opcao invalida!
 pause
-goto :0
+goto :menu
 
 :iniciar
 echo.
@@ -66,7 +67,7 @@ echo [INFO] Acesse: http://localhost:3000
 echo [INFO] Logs: pm2 logs marmoraria
 echo.
 pause
-goto :0
+goto :menu
 
 :parar
 echo.
@@ -74,7 +75,7 @@ echo [INFO] Parando servidor...
 call pm2 stop marmoraria
 echo [OK] Servidor parado!
 pause
-goto :0
+goto :menu
 
 :reiniciar
 echo.
@@ -82,20 +83,20 @@ echo [INFO] Reiniciando servidor...
 call pm2 restart marmoraria
 echo [OK] Servidor reiniciado!
 pause
-goto :0
+goto :menu
 
 :logs
 echo.
 echo [INFO] Mostrando logs (CTRL+C para sair)...
 call pm2 logs marmoraria
-goto :0
+goto :menu
 
 :status
 echo.
 call pm2 status
 echo.
 pause
-goto :0
+goto :menu
 
 :sair
 exit /b 0

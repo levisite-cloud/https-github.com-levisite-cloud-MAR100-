@@ -3,6 +3,7 @@ dist/
 test-session/
 whatsapp-session/
 .wwebjs_cache/
+.wwebjs_auth/
 *.log
 .env
 .env.local

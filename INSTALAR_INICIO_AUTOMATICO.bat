@@ -22,11 +22,7 @@ if errorlevel 1 (
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
 set "TARGET=%STARTUP%\Marmoraria-WhatsApp-Bot.bat"
 
->"%TARGET%" echo @echo off
->>"%TARGET%" echo cd /d "%~dp0"
->>"%TARGET%" echo start "Marmoraria WhatsApp Bot" /min cmd /c "cd /d \"%~dp0\" ^&^& npm run start:bot"
-
-rem Corrige o caminho para apontar para a pasta atual do projeto.
+rem Gera o atalho de inicializacao apontando para a pasta atual do projeto.
 >"%TARGET%" echo @echo off
 >>"%TARGET%" echo cd /d "%~dp0"
 >>"%TARGET%" echo start "Marmoraria WhatsApp Bot" /min cmd /c "cd /d \"%CD%\" ^&^& npm run start:bot"
