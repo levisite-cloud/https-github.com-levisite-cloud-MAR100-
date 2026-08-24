@@ -79,7 +79,14 @@ function isGreeting(body: string) {
 }
 
 async function loadModules() {
-  if (!whatsappModule) whatsappModule = await import('whatsapp-web.js');
+  if (!whatsappModule) {
+    const mod: any = await import('whatsapp-web.js');
+    // whatsapp-web.js é um pacote CommonJS: dependendo do bundler/runtime,
+    // as exportações nomeadas (ex: LocalAuth) só existem dentro de `.default`,
+    // enquanto `Client` pode aparecer tanto na raiz quanto em `.default`.
+    // Usar `.default` quando presente evita "LocalAuth is not a constructor".
+    whatsappModule = mod.default ?? mod;
+  }
   if (!qrcodeModule) qrcodeModule = await import('qrcode');
 }
 
