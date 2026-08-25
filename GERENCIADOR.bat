@@ -60,7 +60,7 @@ goto :menu
 :iniciar
 echo.
 echo [INFO] Iniciando servidor com PM2...
-call pm2 start "npx tsx server.ts" --name marmoraria
+call pm2 start npm --name marmoraria -- run dev
 echo.
 echo [OK] Servidor iniciado!
 echo [INFO] Acesse: http://localhost:3000
