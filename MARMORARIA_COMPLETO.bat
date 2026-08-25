@@ -139,13 +139,45 @@ goto :menu
 
 :iniciar
 echo.
+
+:: Verifica se a porta 3000 ja esta em uso por outro programa
+:: (isso derruba o servidor imediatamente com erro "EADDRINUSE").
+netstat -ano | findstr ":3000" | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo [ATENCAO] A porta 3000 ja esta em uso por outro programa.
+    echo Isso pode fazer o servidor cair assim que iniciar.
+    echo Para ver qual programa esta usando: netstat -ano ^| findstr ":3000"
+    echo.
+)
+
 echo [INFO] Iniciando servidor com PM2 ^(site + bot WhatsApp juntos^)...
 call pm2 delete marmoraria >nul 2>nul
 call pm2 start npm --name marmoraria -- run dev
 echo.
-echo [OK] Servidor iniciado!
-echo [INFO] Acesse: http://localhost:3000
-echo [INFO] Para ver o QR Code do WhatsApp, abra o site e va em Ajustes.
+echo [INFO] Aguardando o servidor subir...
+timeout /t 5 >nul
+call pm2 status marmoraria
+
+:: Se o processo caiu logo de cara (crash loop), mostra o motivo na hora,
+:: sem precisar rodar "pm2 logs" separadamente depois.
+:: pm2 pid retorna o PID real se online, ou "0"/vazio se parado/quebrado.
+for /f "tokens=*" %%p in ('pm2 pid marmoraria 2^>nul') do set BOT_PID=%%p
+if "%BOT_PID%"=="" set BOT_PID=0
+if "%BOT_PID%"=="0" (
+    echo.
+    echo [ERRO] O servidor parece ter caido logo apos iniciar.
+    echo ========================================
+    echo   ULTIMAS LINHAS DO LOG DE ERRO:
+    echo ========================================
+    call pm2 logs marmoraria --err --lines 30 --nostream
+    echo ========================================
+    echo Copie o erro acima e envie para diagnostico.
+) else (
+    echo.
+    echo [OK] Servidor rodando normalmente!
+    echo [INFO] Acesse: http://localhost:3000
+    echo [INFO] Para ver o QR Code do WhatsApp, abra o site e va em Ajustes.
+)
 echo.
 pause
 cls
@@ -164,8 +196,10 @@ goto :menu
 :reiniciar
 echo.
 echo [INFO] Reiniciando servidor...
-call pm2 restart marmoraria
+call pm2 restart marmoraria --update-env
 echo [OK] Servidor reiniciado!
+timeout /t 3 >nul
+call pm2 status marmoraria
 echo.
 pause
 cls
