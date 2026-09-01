@@ -407,8 +407,22 @@ app.post('/api/bot/send', async (req, res) => {
     return res.status(400).json({ success: false, error: 'number e message ou pdfHtml são obrigatórios' });
   }
   try {
-    const cleanNumber = String(number).replace(/\D/g, '');
-    const chatId = String(number).includes('@c.us') ? String(number) : `55${cleanNumber}@c.us`;
+    // Normaliza o número: remove tudo que não é dígito
+    let digits = String(number).replace(/\D/g, '');
+
+    // Se já tem o @c.us, usa direto
+    if (String(number).includes('@c.us')) {
+      var chatId = String(number);
+    } else {
+      // Remove prefixo 55 duplicado se existir
+      if (digits.startsWith('55') && digits.length > 11) {
+        digits = digits.slice(2);
+      }
+      // Monta o chatId com DDI 55 do Brasil
+      var chatId = `55${digits}@c.us`;
+    }
+
+    addLog(`📤 Enviando para ${chatId}...`);
 
     if (pdfHtml) {
       const puppeteer = await import('puppeteer');
@@ -421,13 +435,16 @@ app.post('/api/bot/send', async (req, res) => {
       const { MessageMedia } = whatsappModule;
       const media = new MessageMedia('application/pdf', Buffer.from(pdfBuffer).toString('base64'), pdfName || 'Orcamento.pdf');
       await whatsappClient.sendMessage(chatId, media, { caption: message ? String(message) : '' });
+      addLog(`✅ PDF enviado para ${chatId}`);
     } else {
       await whatsappClient.sendMessage(chatId, String(message));
+      addLog(`✅ Mensagem enviada para ${chatId}`);
     }
 
     res.json({ success: true });
   } catch (err) {
     console.error('Erro ao enviar mensagem/pdf:', err);
+    addLog(`❌ Erro ao enviar: ${String(err)}`);
     res.status(500).json({ success: false, error: String(err) });
   }
 });
