@@ -188,7 +188,7 @@ export const ConfiguracoesView: React.FC = () => {
     socketRef.current = socket;
 
     socket.on('bot:status', (status: any) => setBotStatus(status));
-    socket.on('bot:qr', () => {});
+    socket.on('bot:qr', (qr: string) => setBotStatus(prev => ({ ...prev, qrCode: qr, hasQr: true })));
     socket.on('bot:log', () => {});
 
     return () => { socket.disconnect(); };

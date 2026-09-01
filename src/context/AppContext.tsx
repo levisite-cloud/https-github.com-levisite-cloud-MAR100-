@@ -294,7 +294,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return nextId;
   };
 
+  const sendWhatsAppStatusUpdate = async (atendimento: Atendimento, novoStatus: string) => {
+    if (!atendimento.telefone) return;
+    const mensagem = `Olá ${atendimento.nome}! O status da sua solicitação #${atendimento.id} foi atualizado para: *${novoStatus}*.\n\nQualquer dúvida, estamos à disposição.`;
+    try {
+      await fetch('/api/bot/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: atendimento.telefone, message: mensagem })
+      });
+    } catch (e) {
+      console.error('Erro ao enviar mensagem via bot:', e);
+    }
+  };
+
   const updateAtendimento = async (id: number, updates: Partial<Atendimento>) => {
+    const oldItem = atendimentos.find((a) => a.id === id);
+    const hasStatusChanged = oldItem && updates.status && oldItem.status !== updates.status;
+
     const updatedList = atendimentos.map((a) => {
       if (a.id === id) {
         return {
@@ -310,6 +327,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(STORAGE_ATENDIMENTOS_KEY, JSON.stringify(updatedList));
 
     const updatedItem = updatedList.find((a) => a.id === id);
+
+    if (hasStatusChanged && updatedItem) {
+      sendWhatsAppStatusUpdate(updatedItem, updatedItem.status);
+    }
 
     if (isSupabaseActive && updatedItem) {
       const supabase = getSupabaseClient();
@@ -327,6 +348,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const updateAtendimentoStatus = async (id: number, newStatus: StatusAtendimento) => {
+    const oldItem = atendimentos.find((a) => a.id === id);
+    const hasStatusChanged = oldItem && oldItem.status !== newStatus;
+
     const updatedList = atendimentos.map((a) => {
       if (a.id === id) {
         return {
@@ -340,6 +364,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setAtendimentos(updatedList);
     localStorage.setItem(STORAGE_ATENDIMENTOS_KEY, JSON.stringify(updatedList));
+
+    const updatedItem = updatedList.find((a) => a.id === id);
+    if (hasStatusChanged && updatedItem) {
+      sendWhatsAppStatusUpdate(updatedItem, newStatus);
+    }
 
     if (isSupabaseActive) {
       const supabase = getSupabaseClient();

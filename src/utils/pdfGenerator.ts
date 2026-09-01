@@ -1,7 +1,7 @@
 import { Atendimento, EmpresaConfig } from '../types';
 import { formatDate, formatDateTime, formatMoeda, parseMoedaToNumber } from './formatters';
 
-export function printOrcamentoPDF(atendimento: Atendimento, empresa: EmpresaConfig): boolean {
+export function generateOrcamentoHTML(atendimento: Atendimento, empresa: EmpresaConfig): string {
   const numOrc = String(atendimento.id).padStart(5, '0');
   const dataHoje = new Date().toLocaleDateString('pt-BR');
   const validade = atendimento.validadeOrcamento
@@ -46,7 +46,7 @@ export function printOrcamentoPDF(atendimento: Atendimento, empresa: EmpresaConf
       </tr>
     `;
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -336,7 +336,13 @@ export function printOrcamentoPDF(atendimento: Atendimento, empresa: EmpresaConf
       Documento gerado eletronicamente em ${dataHoje} • ${escapeHtml(empresa.nome)} • Sistema de Gestão de Marmorarias
     </div>
   </div>
+</body>
+</html>`;
+}
 
+export function printOrcamentoPDF(atendimento: Atendimento, empresa: EmpresaConfig): boolean {
+  let html = generateOrcamentoHTML(atendimento, empresa);
+  html = html.replace('</body>', `
   <script>
     window.onload = function() {
       setTimeout(function() {
@@ -344,8 +350,7 @@ export function printOrcamentoPDF(atendimento: Atendimento, empresa: EmpresaConf
       }, 250);
     };
   </script>
-</body>
-</html>`;
+</body>`);
 
   const printWindow = window.open('', '_blank', 'width=900,height=800,scrollbars=yes');
   if (!printWindow) {
@@ -367,3 +372,4 @@ function escapeHtml(str: string | undefined | null): string {
     .replace(/'/g, '&#039;')
     .replace(/\n/g, '<br>');
 }
+

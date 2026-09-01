@@ -271,12 +271,17 @@ async function initializeWhatsApp() {
           margin: 2,
           color: { dark: '#000000', light: '#ffffff' },
         });
+        
+        // Mostrar também no terminal
+        const qrcodeTerminal = await import('qrcode-terminal');
+        qrcodeTerminal.default.generate(qr, { small: true });
+
         botStatus.hasQr = true;
         botStatus.qrCode = qrImage;
         botStatus.isConnecting = true;
         io.emit('bot:status', botStatus);
         io.emit('bot:qr', qrImage);
-        addLog('📷 QR Code gerado. Escaneie pelo WhatsApp.');
+        addLog('📷 QR Code gerado. Escaneie pelo WhatsApp. (Mostrado no terminal e na interface web)');
       } catch (err) {
         botStatus.lastError = `Erro ao gerar QR Code: ${String(err)}`;
         botStatus.errorCount++;
@@ -397,14 +402,32 @@ app.post('/api/bot/send', async (req, res) => {
   if (!whatsappClient || !botStatus.isReady) {
     return res.status(400).json({ success: false, error: 'Bot não conectado' });
   }
-  const { number, message } = req.body || {};
-  if (!number || !message) return res.status(400).json({ success: false, error: 'number e message são obrigatórios' });
+  const { number, message, pdfHtml, pdfName } = req.body || {};
+  if (!number || (!message && !pdfHtml)) {
+    return res.status(400).json({ success: false, error: 'number e message ou pdfHtml são obrigatórios' });
+  }
   try {
-    const cleanNumber = String(number).replace(/\D/g, '');
+    const cleanNumber = String(number).replace(/\\D/g, '');
     const chatId = String(number).includes('@c.us') ? String(number) : `${cleanNumber}@c.us`;
-    await whatsappClient.sendMessage(chatId, String(message));
+
+    if (pdfHtml) {
+      const puppeteer = await import('puppeteer');
+      const browser = await puppeteer.default.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+      const page = await browser.newPage();
+      await page.setContent(pdfHtml, { waitUntil: 'domcontentloaded' });
+      const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+      await browser.close();
+
+      const { MessageMedia } = whatsappModule;
+      const media = new MessageMedia('application/pdf', Buffer.from(pdfBuffer).toString('base64'), pdfName || 'Orcamento.pdf');
+      await whatsappClient.sendMessage(chatId, media, { caption: message ? String(message) : '' });
+    } else {
+      await whatsappClient.sendMessage(chatId, String(message));
+    }
+
     res.json({ success: true });
   } catch (err) {
+    console.error('Erro ao enviar mensagem/pdf:', err);
     res.status(500).json({ success: false, error: String(err) });
   }
 });

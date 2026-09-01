@@ -32,8 +32,8 @@ import {
   STATUS_LIST,
   PRIORIDADE_CONFIG,
 } from '../utils/formatters';
-import { ItemOrcamento, PrioridadeAtendimento, StatusAtendimento } from '../types';
-import { printOrcamentoPDF } from '../utils/pdfGenerator';
+import { PrioridadeAtendimento, StatusAtendimento, ItemOrcamento } from '../types';
+import { printOrcamentoPDF, generateOrcamentoHTML } from '../utils/pdfGenerator';
 import { generateGoogleCalendarUrl, downloadIcsCalendarFile } from '../utils/calendarHelpers';
 
 export const AtendimentoDetailModal: React.FC = () => {
@@ -192,6 +192,38 @@ export const AtendimentoDetailModal: React.FC = () => {
     const success = printOrcamentoPDF(currentAtendimento, empresa);
     if (!success) {
       addToast('Aviso', 'Permita pop-ups no navegador para visualizar a impressão do PDF.', 'warning');
+    }
+  };
+
+  const handleSendPDFWhatsApp = async () => {
+    if (!atendimento.telefone) {
+      addToast('Erro', 'O cliente não possui telefone cadastrado.', 'error');
+      return;
+    }
+    const currentAtendimento = getCurrentAtendimentoSnapshot();
+    const html = generateOrcamentoHTML(currentAtendimento, empresa);
+    
+    addToast('Enviando PDF...', 'Gerando PDF e enviando via WhatsApp.', 'info');
+    
+    try {
+      const response = await fetch('/api/bot/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          number: atendimento.telefone,
+          message: `Olá ${atendimento.nome}! Segue em anexo o orçamento da sua solicitação #${atendimento.id}.`,
+          pdfHtml: html,
+          pdfName: `Orcamento_${atendimento.id}.pdf`
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        addToast('Sucesso', 'PDF enviado com sucesso pelo WhatsApp.', 'success');
+      } else {
+        addToast('Erro ao Enviar', data.error || 'Erro desconhecido', 'error');
+      }
+    } catch (err) {
+      addToast('Erro ao Enviar', 'Falha na conexão com o bot.', 'error');
     }
   };
 
@@ -641,6 +673,14 @@ export const AtendimentoDetailModal: React.FC = () => {
 
           <div className="flex items-center gap-2 ml-auto">
             
+
+            <button
+              onClick={handleSendPDFWhatsApp}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>WhatsApp PDF</span>
+            </button>
 
             <button
               onClick={handlePrintPDF}
