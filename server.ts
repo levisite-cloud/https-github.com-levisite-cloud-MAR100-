@@ -407,8 +407,8 @@ app.post('/api/bot/send', async (req, res) => {
     return res.status(400).json({ success: false, error: 'number e message ou pdfHtml são obrigatórios' });
   }
   try {
-    const cleanNumber = String(number).replace(/\\D/g, '');
-    const chatId = String(number).includes('@c.us') ? String(number) : `${cleanNumber}@c.us`;
+    const cleanNumber = String(number).replace(/\D/g, '');
+    const chatId = String(number).includes('@c.us') ? String(number) : `55${cleanNumber}@c.us`;
 
     if (pdfHtml) {
       const puppeteer = await import('puppeteer');

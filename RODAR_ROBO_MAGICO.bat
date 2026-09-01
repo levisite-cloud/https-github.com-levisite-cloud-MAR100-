@@ -1,48 +1,77 @@
 @echo off
 setlocal
 chcp 65001 >nul
-title MARMORARIA - SISTEMA COMPLETO
+title MARMORARIA IMPERIAL - SUPER ROBO
 
-echo ========================================
-echo       SISTEMA MARMORARIA - AUTOSTART
-echo ========================================
+echo.
+echo ================================================================
+echo       MARMORARIA IMPERIAL - SISTEMA COMPLETO
+echo ================================================================
 echo.
 
-echo [1/4] Limpando processos antigos (evita erro de porta)...
-taskkill /F /IM node.exe >nul 2>&1
-taskkill /F /IM tsx.cmd >nul 2>&1
-echo [OK] Processos antigos encerrados.
+:: PASSO 1 - Limpar portas travadas
+echo [1/5] Liberando portas (3000 e 24678)...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000 " 2^>nul') do (
+    taskkill /F /PID %%a >nul 2>&1
+)
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":24678 " 2^>nul') do (
+    taskkill /F /PID %%a >nul 2>&1
+)
+echo [OK] Portas liberadas.
 echo.
 
-echo [2/4] Sincronizando com o GitHub...
+:: PASSO 2 - Sincronizar com GitHub
+echo [2/5] Sincronizando com o GitHub...
 git pull
 echo.
 
-echo [3/4] Verificando dependencias...
-call npm install >nul 2>&1
-echo [OK] Dependencias instaladas.
+:: PASSO 3 - Dependencias
+echo [3/5] Verificando dependencias...
+if not exist "node_modules\" (
+    echo Primeira instalacao detectada. Aguarde...
+    call npm install
+) else (
+    call npm install --silent >nul 2>&1
+)
+echo [OK] Dependencias prontas.
 echo.
 
-echo [4/4] Iniciando os servidores...
+:: PASSO 4 - Arquivo .env
+echo [4/5] Verificando configuracoes (.env)...
 if not exist ".env" (
     if exist ".env.example" (
         copy ".env.example" ".env" >nul
+        echo [AVISO] Arquivo .env criado. Edite com suas credenciais!
+    ) else (
+        echo [AVISO] Arquivo .env nao encontrado!
     )
+) else (
+    echo [OK] Arquivo .env encontrado.
 )
-
-echo.
-echo ========================================
-echo  TUDO PRONTO! INICIANDO O SISTEMA...
-echo ========================================
 echo.
 
-:: Abre o navegador no endereco correto (porta 3000)
+:: PASSO 5 - Iniciar o sistema
+echo [5/5] Iniciando o Sistema...
+echo.
+echo ================================================================
+echo  SISTEMA INICIADO! Abrindo o navegador...
+echo ================================================================
+echo.
+echo  - Acesse: http://localhost:3000
+echo  - Para conectar o WhatsApp, va em: Configuracoes
+echo  - O QR Code aparecera nesta tela E no sistema
+echo.
+echo  Para ENCERRAR: feche esta janela ou pressione CTRL+C
+echo ================================================================
+echo.
+
+:: Abre o navegador apos 3 segundos (tempo para o servidor iniciar)
+ping 127.0.0.1 -n 4 >nul
 start http://localhost:3000
 
-:: Inicia o servidor unificado (que contem o Frontend, Backend e Robo do WhatsApp)
-echo O servidor do Robo, Interface e Banco de Dados rodarao juntos nesta tela.
-echo Aguarde o QR Code aparecer logo abaixo...
-echo.
+:: Roda o servidor unificado (Frontend + Backend + Robo na mesma porta 3000)
 npm run dev
 
+echo.
+echo [SERVIDOR ENCERRADO]
 pause
