@@ -695,6 +695,15 @@ export const ConfiguracoesView: React.FC = () => {
                     <img src={botStatus.qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
                   </div>
                   <p className="text-[10px] text-zinc-500 animate-pulse">Aguardando leitura do QR Code...</p>
+                  <button
+                    type="button"
+                    disabled={botLoading}
+                    onClick={handleDisconnectBot}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold rounded-lg border border-rose-500/30 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Cancelar / Desconectar QR Code</span>
+                  </button>
                 </div>
               )}
 
