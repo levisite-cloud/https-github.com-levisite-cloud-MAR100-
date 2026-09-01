@@ -36,8 +36,8 @@ echo  TUDO PRONTO! INICIANDO AS JANELAS...
 echo ========================================
 echo.
 
-:: Inicia o Frontend em uma nova janela
-start "Frontend (Interface do Sistema)" cmd /k "npm run dev -- --port 5173"
+:: Inicia o Frontend em uma nova janela e ja abre o navegador
+start "Frontend (Interface do Sistema)" cmd /k "npm run dev -- --port 5173 --open"
 
 :: Inicia o Backend/Chatbot nesta mesma janela para ver o QR Code direto aqui
 echo O servidor do Robo e Banco de Dados ficara nesta tela.
