@@ -32,17 +32,17 @@ if not exist ".env" (
 
 echo.
 echo ========================================
-echo  TUDO PRONTO! INICIANDO AS JANELAS...
+echo  TUDO PRONTO! INICIANDO O SISTEMA...
 echo ========================================
 echo.
 
-:: Inicia o Frontend em uma nova janela e ja abre o navegador
-start "Frontend (Interface do Sistema)" cmd /k "npm run dev -- --port 5173 --open"
+:: Abre o navegador no endereco correto (porta 3000)
+start http://localhost:3000
 
-:: Inicia o Backend/Chatbot nesta mesma janela para ver o QR Code direto aqui
-echo O servidor do Robo e Banco de Dados ficara nesta tela.
-echo Aguarde o QR Code...
+:: Inicia o servidor unificado (que contem o Frontend, Backend e Robo do WhatsApp)
+echo O servidor do Robo, Interface e Banco de Dados rodarao juntos nesta tela.
+echo Aguarde o QR Code aparecer logo abaixo...
 echo.
-npm run start:local
+npm run dev
 
 pause
