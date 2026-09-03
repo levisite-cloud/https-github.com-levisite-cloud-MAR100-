@@ -91,15 +91,48 @@ async function loadModules() {
 }
 
 async function disconnectWhatsApp() {
+  isInitializing = false;
   if (!whatsappClient) return;
+  const clientToDestroy = whatsappClient;
+  whatsappClient = null;
   try {
-    await whatsappClient.destroy();
+    if (typeof clientToDestroy.removeAllListeners === 'function') {
+      clientToDestroy.removeAllListeners();
+    }
+    await clientToDestroy.destroy();
   } catch (err) {
     addLog(`Aviso ao destruir sessão: ${String(err)}`);
-  } finally {
-    whatsappClient = null;
   }
 }
+
+// Protege o servidor contra quedas causadas por fechamento abrupto do Puppeteer/WhatsApp
+process.on('unhandledRejection', (reason: any) => {
+  const msg = reason?.message || String(reason);
+  if (
+    msg.includes('Target closed') ||
+    msg.includes('Protocol error') ||
+    msg.includes('Session closed') ||
+    msg.includes('Execution context was destroyed')
+  ) {
+    addLog(`Aviso do WhatsApp Web (TargetClose): ${msg}`);
+  } else {
+    console.error('Unhandled Rejection:', reason);
+  }
+});
+
+process.on('uncaughtException', (err: any) => {
+  const msg = err?.message || String(err);
+  if (
+    msg.includes('Target closed') ||
+    msg.includes('Protocol error') ||
+    msg.includes('Session closed') ||
+    msg.includes('Execution context was destroyed')
+  ) {
+    addLog(`Aviso do WhatsApp Web (Uncaught): ${msg}`);
+  } else {
+    console.error('Uncaught Exception:', err);
+  }
+});
 
 function getSupabaseConfig() {
   return {
