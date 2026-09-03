@@ -65,9 +65,8 @@ echo  Para ENCERRAR: feche esta janela ou pressione CTRL+C
 echo ================================================================
 echo.
 
-:: Abre o navegador apos 3 segundos (tempo para o servidor iniciar)
-ping 127.0.0.1 -n 4 >nul
-start http://localhost:3000
+:: Agenda abertura do navegador apos o servidor iniciar
+start "" cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:3000"
 
 :: Roda o servidor unificado (Frontend + Backend + Robo na mesma porta 3000)
 npm run dev
