@@ -233,6 +233,58 @@ export const AtendimentoDetailModal: React.FC = () => {
     }
   };
 
+  const [sendingOrcamento, setSendingOrcamento] = useState(false);
+
+  const handleSendOrcamentoBot = async () => {
+    if (!atendimento.telefone) {
+      addToast('Atenção', 'Este cliente não tem telefone cadastrado.', 'warning');
+      return;
+    }
+    if (empresa.notifOrcamento === false) {
+      addToast('Atenção', 'Envio de orçamento via robô está desativado nas Configurações.', 'warning');
+      return;
+    }
+    setSendingOrcamento(true);
+    try {
+      const { sendBotMessageAndLog } = await import('../lib/botApi');
+      const apiToken = (import.meta as any).env?.VITE_BOT_API_TOKEN || 'marmoraria-secreto';
+      const firstName = atendimento.nome.split(' ')[0] || 'Cliente';
+      const numDisplay = atendimento.numeroPedido ? String(atendimento.numeroPedido).padStart(2, '0') : atendimento.id;
+      const valorTotal = totalFinal > 0 ? `R$ ${formatMoeda(totalFinal)}` : atendimento.orcamento || 'A definir';
+      const validade = validadeOrcamento ? formatDate(validadeOrcamento) : 'Não definida';
+      
+      const msg =
+        `Olá, *${firstName}*! 🏛️\n\n` +
+        `Segue o orçamento referente ao seu Pedido nº ${numDisplay}:\n\n` +
+        `🛠️ Serviço: ${atendimento.servico}\n` +
+        `💎 Material: ${atendimento.material}\n` +
+        `💰 Valor Total: *${valorTotal}*\n` +
+        `📅 Validade do Orçamento: ${validade}\n` +
+        `💳 Condições: ${condicoesPagamento || atendimento.condicoesPagamento || 'A combinar'}\n\n` +
+        `Para aprovar ou tirar dúvidas, entre em contato!\n\nAtt, *${empresa.nome}*`;
+
+      const result = await sendBotMessageAndLog(
+        apiToken,
+        atendimento.id,
+        atendimento.telefone,
+        'orcamento',
+        atendimento.status,
+        atendimento.status,
+        msg
+      );
+
+      if (result.success) {
+        addToast('Orçamento Enviado! ✅', `Proposta enviada para ${atendimento.nome} via WhatsApp.`, 'success');
+      } else {
+        addToast('Falha no Envio', result.error || 'Verifique se o robô está conectado.', 'error');
+      }
+    } catch (e: any) {
+      addToast('Erro', e.message || 'Erro ao enviar orçamento.', 'error');
+    } finally {
+      setSendingOrcamento(false);
+    }
+  };
+
   const nextStep = getNextStep(status);
   const statusCfg = STATUS_CONFIG[status];
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -246,7 +298,7 @@ export const AtendimentoDetailModal: React.FC = () => {
         <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-zinc-800 bg-zinc-850 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-amber-400 text-zinc-950">
-              #{String(atendimento.id).padStart(4, '0')}
+              Pedido nº {atendimento.numeroPedido ? String(atendimento.numeroPedido).padStart(2, '0') : atendimento.id}
             </span>
             <div>
               <h2 className="text-base font-black text-amber-400 leading-tight flex items-center gap-2">
@@ -688,6 +740,16 @@ export const AtendimentoDetailModal: React.FC = () => {
             >
               <Printer className="w-4 h-4 text-zinc-400" />
               <span>📄 Gerar PDF / Imprimir</span>
+            </button>
+
+            <button
+              onClick={handleSendOrcamentoBot}
+              disabled={sendingOrcamento}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-white border border-emerald-500 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+              title="Enviar orçamento para o WhatsApp do cliente via Robô"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>{sendingOrcamento ? '⏳ Enviando...' : '📱 Enviar Orçamento (WhatsApp)'}</span>
             </button>
 
             <button

@@ -303,7 +303,7 @@ export const AtendimentosListView: React.FC = () => {
                       className="hover:bg-zinc-800/50 cursor-pointer transition-colors"
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-zinc-500">
-                        #{String(a.id).padStart(4, '0')}
+                        Pedido nº {a.numeroPedido ? String(a.numeroPedido).padStart(2, '0') : a.id}
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="font-black text-amber-400">{a.nome}</div>
@@ -395,7 +395,7 @@ export const AtendimentosListView: React.FC = () => {
                   className="p-4 space-y-2.5 hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-zinc-500">#{String(a.id).padStart(4, '0')}</span>
+                    <span className="font-mono text-xs font-bold text-zinc-500">Pedido nº {a.numeroPedido ? String(a.numeroPedido).padStart(2, '0') : a.id}</span>
                     <div className="flex items-center gap-1.5">
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${prioridadeCfg.bg} ${prioridadeCfg.text}`}>
                         {a.prioridade || 'Normal'}

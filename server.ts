@@ -183,6 +183,34 @@ async function handleMessage(msg: any) {
     return;
   }
 
+  // Consulta em linguagem natural: "status", "pedido", "como está", "acompanhar"
+  const isStatusQuery = /(como est|status|pedido|meu ped|acompanhar|prazo|entrega|pronto|producao|produção)/i.test(body);
+  if (isStatusQuery && current === 'menu') {
+    // Tentar buscar pelo número do remetente automaticamente
+    const fromNumber = from.replace('@c.us', '').replace(/\D/g, '');
+    const atendimento = await findAtendimento(fromNumber);
+    if (atendimento) {
+      const numPedido = atendimento.numero_pedido
+        ? `Pedido nº ${String(atendimento.numero_pedido).padStart(2, '0')}`
+        : `Solicitação #${atendimento.id}`;
+      const dataPrevisao = atendimento.data_prevista || 'Não definida';
+      const resp =
+        `📊 *Status do seu pedido*\n\n` +
+        `👤 ${atendimento.nome}\n` +
+        `📦 ${numPedido}\n` +
+        `🛠️ ${atendimento.servico || ''} — ${atendimento.material || ''}\n` +
+        `📌 Status atual: *${atendimento.status || 'Não informado'}*\n` +
+        `📅 Previsão: ${dataPrevisao}\n\n` +
+        `Para mais opções, digite 0 para ver o menu.`;
+      await msg.reply(resp);
+      return;
+    } else {
+      conversations.set(from, 'status');
+      await msg.reply(`📊 *Acompanhar Status*\n\nInforme o número do seu pedido ou CPF/CNPJ para consultar.\n\nDigite 0 para voltar ao menu.`);
+      return;
+    }
+  }
+
   if (current === 'consultar' || current === 'status') {
     const atendimento = await findAtendimento(body);
     if (!atendimento) {
@@ -334,11 +362,15 @@ async function initializeWhatsApp() {
       isInitializing = false;
 
       if (!manualDisconnect) {
-        setTimeout(() => {
-          botStatus.reconnectAttempts++;
-          addLog('🔄 Tentando reconexão automática...');
-          initializeWhatsApp();
-        }, 5000);
+        if (botStatus.reconnectAttempts < 10) {
+          setTimeout(() => {
+            botStatus.reconnectAttempts++;
+            addLog(`🔄 Tentando reconexão automática (${botStatus.reconnectAttempts}/10)...`);
+            initializeWhatsApp();
+          }, 5000);
+        } else {
+          addLog('❌ Limite de tentativas de reconexão atingido. Conecte manualmente.');
+        }
       }
     });
 
@@ -367,7 +399,16 @@ app.get('/api/bot/status', (_req, res) => {
   res.json(botStatus);
 });
 
-app.post('/api/bot/connect', async (_req, res) => {
+const BOT_TOKEN = process.env.VITE_BOT_API_TOKEN || 'marmoraria-secreto';
+const verifyBotToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const token = req.headers['x-api-token'];
+  if (token !== BOT_TOKEN) {
+    return res.status(401).json({ success: false, error: 'Acesso negado. Token inválido.' });
+  }
+  next();
+};
+
+app.post('/api/bot/connect', verifyBotToken, async (_req, res) => {
   try {
     manualDisconnect = false;
     initializeWhatsApp();
@@ -377,7 +418,7 @@ app.post('/api/bot/connect', async (_req, res) => {
   }
 });
 
-app.post('/api/bot/disconnect', async (_req, res) => {
+app.post('/api/bot/disconnect', verifyBotToken, async (_req, res) => {
   try {
     manualDisconnect = true;
     await disconnectWhatsApp();
@@ -398,7 +439,7 @@ app.post('/api/bot/disconnect', async (_req, res) => {
   }
 });
 
-app.post('/api/bot/send', async (req, res) => {
+app.post('/api/bot/send', verifyBotToken, async (req, res) => {
   if (!whatsappClient || !botStatus.isReady) {
     return res.status(400).json({ success: false, error: 'Bot não conectado' });
   }
@@ -460,6 +501,99 @@ setInterval(() => {
     io.emit('bot:status', botStatus);
   }
 }, 1000);
+
+// Cron de lembretes: roda a cada hora para verificar visitas nas próximas 24h
+async function runLembretes() {
+  if (!whatsappClient || !botStatus.isReady) return;
+  const { url, key } = getSupabaseConfig();
+  if (!url || !key) return;
+
+  try {
+    // Buscar config de notificações da empresa
+    const cfgResp = await fetch(`${url}/rest/v1/empresa_config?id=eq.default&select=notif_lembrete`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    const cfgRows = await cfgResp.json();
+    if (!cfgRows?.[0]?.notif_lembrete) return;
+
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10); // YYYY-MM-DD
+
+    // Buscar atendimentos com data_prevista ou data_instalacao amanhã
+    const filterDataPrevista = `data_prevista.eq.${tomorrowStr}`;
+    const filterDataInstalacao = `data_instalacao.eq.${tomorrowStr}`;
+
+    for (const filter of [filterDataPrevista, filterDataInstalacao]) {
+      const resp = await fetch(
+        `${url}/rest/v1/atendimentos?select=*&${filter}&status=neq.Concluído`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+      );
+      if (!resp.ok) continue;
+      const rows: any[] = await resp.json();
+
+      for (const a of rows) {
+        if (!a.telefone) continue;
+        const cleanNumber = String(a.telefone).replace(/\D/g, '');
+        const isInstalacao = filter.includes('data_instalacao');
+        const dataFormatada = isInstalacao
+          ? (a.data_instalacao || tomorrowStr)
+          : (a.data_prevista || tomorrowStr);
+        const tipoVisita = isInstalacao ? 'Instalação' : 'Visita/Medição';
+        const numPedido = a.numero_pedido
+          ? String(a.numero_pedido).padStart(2, '0')
+          : String(a.id);
+        const firstName = String(a.nome || 'Cliente').split(' ')[0];
+        const horario = a.hora_prevista ? ` às ${a.hora_prevista}` : '';
+
+        const mensagem =
+          `Olá, *${firstName}*! 👋\n\n` +
+          `Lembramos que sua *${tipoVisita}* referente ao Pedido nº ${numPedido} está agendada para *amanhã*!\n\n` +
+          `📅 Data: ${dataFormatada}${horario}\n` +
+          `📍 Local: ${a.endereco || 'Endereço cadastrado'}\n\n` +
+          `Em caso de dúvidas ou para reagendar, nos contate.\n\n` +
+          `Att, *Marmoraria Imperial*`;
+
+        try {
+          const chatId = `${cleanNumber}@c.us`;
+          await whatsappClient.sendMessage(chatId, mensagem);
+          addLog(`🔔 Lembrete enviado para ${a.nome} (${chatId}) — Pedido nº ${numPedido}`);
+
+          // Log no Supabase
+          await fetch(`${url}/rest/v1/whatsapp_logs`, {
+            method: 'POST',
+            headers: {
+              apikey: key,
+              Authorization: `Bearer ${key}`,
+              'Content-Type': 'application/json',
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify({
+              atendimento_id: a.id,
+              telefone: a.telefone,
+              tipo: 'lembrete',
+              status_anterior: a.status,
+              status_novo: a.status,
+              mensagem,
+              resultado: 'sucesso',
+              tentativas: 1,
+            }),
+          });
+        } catch (err) {
+          addLog(`⚠️ Falha ao enviar lembrete para ${a.nome}: ${String(err)}`);
+        }
+      }
+    }
+  } catch (err) {
+    addLog(`⚠️ Erro no cron de lembretes: ${String(err)}`);
+  }
+}
+
+// Roda de hora em hora; e na inicialização após 60 segundos para dar tempo ao bot conectar
+setTimeout(() => {
+  runLembretes();
+  setInterval(runLembretes, 60 * 60 * 1000);
+}, 60 * 1000);
 
 async function start() {
   if (process.env.NODE_ENV !== 'production') {

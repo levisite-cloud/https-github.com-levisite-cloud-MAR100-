@@ -53,6 +53,7 @@ const SUPABASE_SQL_SCRIPT = `-- ================================================
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.atendimentos (
     id BIGINT PRIMARY KEY,
+    numero_pedido INT,
     nome TEXT NOT NULL,
     telefone TEXT NOT NULL,
     email TEXT DEFAULT '',
@@ -102,11 +103,32 @@ CREATE TABLE IF NOT EXISTS public.empresa_config (
     logo TEXT DEFAULT '',
     cor TEXT DEFAULT '#eab308',
     termos_padrao TEXT DEFAULT '',
+    notif_status BOOLEAN DEFAULT true,
+    notif_orcamento BOOLEAN DEFAULT true,
+    notif_agendamento BOOLEAN DEFAULT true,
+    notif_lembrete BOOLEAN DEFAULT true,
+    notif_alteracao BOOLEAN DEFAULT true,
+    notif_finalizacao BOOLEAN DEFAULT true,
     atualizado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.whatsapp_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    atendimento_id BIGINT REFERENCES public.atendimentos(id) ON DELETE CASCADE,
+    telefone TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    status_anterior TEXT,
+    status_novo TEXT,
+    mensagem TEXT NOT NULL,
+    data_hora TIMESTAMPTZ DEFAULT NOW(),
+    resultado TEXT NOT NULL,
+    erro_detalhe TEXT,
+    tentativas INT DEFAULT 1
 );
 
 ALTER TABLE public.atendimentos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.empresa_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_logs ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Acesso Atendimentos" ON public.atendimentos;
 CREATE POLICY "Acesso Atendimentos" ON public.atendimentos FOR ALL USING (true) WITH CHECK (true);
@@ -114,8 +136,12 @@ CREATE POLICY "Acesso Atendimentos" ON public.atendimentos FOR ALL USING (true) 
 DROP POLICY IF EXISTS "Acesso Empresa" ON public.empresa_config;
 CREATE POLICY "Acesso Empresa" ON public.empresa_config FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Acesso WhatsApp Logs" ON public.whatsapp_logs;
+CREATE POLICY "Acesso WhatsApp Logs" ON public.whatsapp_logs FOR ALL USING (true) WITH CHECK (true);
+
 ALTER PUBLICATION supabase_realtime ADD TABLE public.atendimentos;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.empresa_config;`;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.empresa_config;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_logs;`;
 
 export const ConfiguracoesView: React.FC = () => {
   const {
@@ -194,10 +220,15 @@ export const ConfiguracoesView: React.FC = () => {
     return () => { socket.disconnect(); };
   }, []);
 
+  const apiToken = (import.meta as any).env?.VITE_BOT_API_TOKEN || 'marmoraria-secreto';
+
   const handleConnectBot = async () => {
     setBotLoading(true);
     try {
-      await fetch('/api/bot/connect', { method: 'POST' });
+      await fetch('/api/bot/connect', { 
+        method: 'POST',
+        headers: { 'x-api-token': apiToken }
+      });
       addToast('Conectando', 'Iniciando conexão com WhatsApp...', 'info');
     } catch {
       addToast('Erro', 'Não foi possível iniciar a conexão.', 'error');
@@ -209,7 +240,10 @@ export const ConfiguracoesView: React.FC = () => {
   const handleDisconnectBot = async () => {
     setBotLoading(true);
     try {
-      await fetch('/api/bot/disconnect', { method: 'POST' });
+      await fetch('/api/bot/disconnect', { 
+        method: 'POST',
+        headers: { 'x-api-token': apiToken }
+      });
       addToast('Desconectado', 'WhatsApp desconectado.', 'info');
     } catch {
       addToast('Erro', 'Não foi possível desconectar.', 'error');
@@ -988,6 +1022,59 @@ export const ConfiguracoesView: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Configurações do Robô do WhatsApp */}
+          <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 shadow-lg space-y-4">
+            <h2 className="text-sm font-black text-amber-400 flex items-center gap-2 border-b border-zinc-800 pb-3">
+              <MessageCircle className="w-4 h-4 text-amber-400" />
+              <span>Automação e Notificações (Robô WhatsApp)</span>
+            </h2>
+
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-zinc-850 rounded-lg transition-colors border border-transparent hover:border-zinc-800">
+                <input
+                  type="checkbox"
+                  checked={formData.notifStatus !== false}
+                  onChange={(e) => handleInputChange('notifStatus', e.target.checked)}
+                  className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-amber-500 focus:ring-amber-500/20 focus:ring-offset-zinc-900 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-zinc-300">Avisar cliente quando mudar status do Pedido (Kanban)</span>
+              </label>
+              
+              <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-zinc-850 rounded-lg transition-colors border border-transparent hover:border-zinc-800">
+                <input
+                  type="checkbox"
+                  checked={formData.notifOrcamento !== false}
+                  onChange={(e) => handleInputChange('notifOrcamento', e.target.checked)}
+                  className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-amber-500 focus:ring-amber-500/20 focus:ring-offset-zinc-900 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-zinc-300">Permitir envio de Orçamentos via Robô (PDF/Texto)</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-zinc-850 rounded-lg transition-colors border border-transparent hover:border-zinc-800">
+                <input
+                  type="checkbox"
+                  checked={formData.notifAgendamento !== false}
+                  onChange={(e) => handleInputChange('notifAgendamento', e.target.checked)}
+                  className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-amber-500 focus:ring-amber-500/20 focus:ring-offset-zinc-900 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-zinc-300">Notificar cliente ao marcar nova Visita/Instalação</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-zinc-850 rounded-lg transition-colors border border-transparent hover:border-zinc-800">
+                <input
+                  type="checkbox"
+                  checked={formData.notifLembrete !== false}
+                  onChange={(e) => handleInputChange('notifLembrete', e.target.checked)}
+                  className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-amber-500 focus:ring-amber-500/20 focus:ring-offset-zinc-900 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-zinc-300">Lembrete Automático 24 horas antes da visita</span>
+              </label>
+            </div>
+            <p className="text-[10px] text-zinc-500 mt-2">
+              Nota: as mensagens são automáticas baseadas nas ações do sistema. Desmarque se preferir fazer a comunicação manualmente.
+            </p>
           </div>
 
           {/* Termos e Condições Padrão */}

@@ -83,10 +83,19 @@ Os arquivos otimizados serão gerados na pasta `dist/`.
 
 ---
 
-## ☁️ Como Publicar / Hospedar Gratuitamente
+## ☁️ Hospedagem e Publicação
 
-### Na Vercel:
-1. Acesse [vercel.com](https://vercel.com) e conecte sua conta do GitHub.
-2. Clique em **"Add New Project"** e selecione o repositório `MAR100-`.
-3. Adicione as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` nas configurações de Environment Variables se desejar.
-4. Clique em **Deploy**.
+**ATENÇÃO:** Esta aplicação contém um Back-End próprio em Node.js (`server.ts`) para gerenciar o Robô do WhatsApp usando Puppeteer.
+Por esse motivo, **NÃO recomendamos** a hospedagem em plataformas "Serverless" focadas apenas em Front-End, como a **Vercel** ou Netlify, pois o robô do WhatsApp será desligado automaticamente e não funcionará.
+
+### Opção 1: Rodar Localmente na Marmoraria (Recomendado)
+Para maior estabilidade do WhatsApp, basta deixar o sistema rodando no computador da empresa.
+Use o arquivo `MARMORARIA_COMPLETO.bat` incluído no projeto. Ele usará o `pm2` para manter o sistema aberto em segundo plano e ligará automaticamente o site e o robô na porta `3000`.
+
+### Opção 2: Hospedagem em Nuvem (VPS)
+Se você precisa acessar o sistema de fora da empresa, publique em um serviço de nuvem que ofereça servidores contínuos (VPS):
+- **Render** (Web Service), **Railway**, **Fly.io** ou **DigitalOcean**.
+- O comando de inicialização para essas plataformas deve ser:
+  ```bash
+  npm run build:full && npm start
+  ```

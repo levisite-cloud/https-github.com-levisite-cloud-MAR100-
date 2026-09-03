@@ -250,9 +250,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // CRUD Operations for Atendimentos
   const addAtendimento = async (data: Omit<Atendimento, 'id' | 'criadoEm'>): Promise<number> => {
     const nextId = Date.now();
+    const maxNumeroPedido = atendimentos.length > 0 
+      ? Math.max(...atendimentos.map(a => a.numeroPedido || 0)) 
+      : 0;
+    
     const newAtendimento: Atendimento = {
       ...data,
       id: nextId,
+      numeroPedido: maxNumeroPedido + 1,
       criadoEm: new Date().toISOString(),
     };
 
@@ -344,12 +349,55 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
 
+    const atendimentoOriginal = atendimentos.find(a => a.id === id);
+    if (atendimentoOriginal && updatedItem && empresa.notifAgendamento !== false && updatedItem.telefone) {
+      // Checar se houve mudança nas datas de agendamento
+      const mudouAgendamento = 
+        (updates.dataPrevista && updates.dataPrevista !== atendimentoOriginal.dataPrevista) ||
+        (updates.dataMedicao && updates.dataMedicao !== atendimentoOriginal.dataMedicao) ||
+        (updates.dataInstalacao && updates.dataInstalacao !== atendimentoOriginal.dataInstalacao);
+
+      if (mudouAgendamento) {
+        const { sendBotMessageAndLog } = await import('../lib/botApi');
+        const { formatDate } = await import('../utils/formatters');
+        const apiToken = (import.meta as any).env?.VITE_BOT_API_TOKEN || 'marmoraria-secreto';
+        const firstName = updatedItem.nome.split(' ')[0] || 'Cliente';
+        const numDisplay = updatedItem.numeroPedido ? String(updatedItem.numeroPedido).padStart(2, '0') : id;
+        
+        let agendaMsg = '';
+        if (updates.dataInstalacao) {
+          agendaMsg = `Sua Instalação foi agendada para: *${formatDate(updatedItem.dataInstalacao)}*`;
+        } else if (updates.dataMedicao) {
+          agendaMsg = `Sua Medição foi agendada para: *${formatDate(updatedItem.dataMedicao)}*`;
+        } else if (updates.dataPrevista) {
+          agendaMsg = `Nova data prevista: *${formatDate(updatedItem.dataPrevista)}*`;
+        }
+
+        const msg = `Olá, *${firstName}*! Passando para informar uma atualização no agendamento do seu Pedido nº ${numDisplay}.\n\n` + 
+                    `📅 ${agendaMsg}\n\nQualquer dúvida, nos chame!\n\nAtt, *${empresa.nome}*`;
+                    
+        sendBotMessageAndLog(
+          apiToken,
+          updatedItem.id,
+          updatedItem.telefone,
+          'agendamento',
+          atendimentoOriginal.status,
+          updatedItem.status,
+          msg
+        ).catch(e => console.error('Erro no disparo de agendamento:', e));
+      }
+    }
+
     addToast('Atendimento Atualizado', 'As alterações foram salvas e sincronizadas.', 'success');
   };
 
   const updateAtendimentoStatus = async (id: number, newStatus: StatusAtendimento) => {
-    const oldItem = atendimentos.find((a) => a.id === id);
-    const hasStatusChanged = oldItem && oldItem.status !== newStatus;
+    const atendimentoOriginal = atendimentos.find((a) => a.id === id);
+    if (!atendimentoOriginal) return;
+    
+    const hasStatusChanged = atendimentoOriginal.status !== newStatus;
+    // Evitar disparo e atualização se o status não mudou
+    if (!hasStatusChanged) return;
 
     const updatedList = atendimentos.map((a) => {
       if (a.id === id) {
@@ -394,6 +442,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } catch {
         // ignore
       }
+    }
+
+    // Disparo Automático via Robô
+    if (empresa.notifStatus !== false && atendimentoOriginal.telefone) {
+      const { sendBotMessageAndLog } = await import('../lib/botApi');
+      const apiToken = (import.meta as any).env?.VITE_BOT_API_TOKEN || 'marmoraria-secreto';
+      const firstName = atendimentoOriginal.nome.split(' ')[0] || 'Cliente';
+      const numDisplay = atendimentoOriginal.numeroPedido ? String(atendimentoOriginal.numeroPedido).padStart(2, '0') : id;
+      
+      const msg = `Olá, *${firstName}*! Passando para informar que o status do seu Pedido nº ${numDisplay} (${atendimentoOriginal.servico}) foi atualizado.\n\n` + 
+                  `Novo status: *${newStatus}* 🚀\n\nQualquer dúvida, estamos à disposição!\n\nAtt, *${empresa.nome}*`;
+                  
+      sendBotMessageAndLog(
+        apiToken,
+        atendimentoOriginal.id,
+        atendimentoOriginal.telefone,
+        'status',
+        atendimentoOriginal.status,
+        newStatus,
+        msg
+      ).catch(e => console.error('Erro no disparo assíncrono:', e));
     }
 
     addToast(`Status: ${newStatus}`, `Atendimento #${id} atualizado.`, 'success');

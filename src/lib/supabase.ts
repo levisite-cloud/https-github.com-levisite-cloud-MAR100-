@@ -113,6 +113,7 @@ export async function testSupabaseConnection(urlInput?: string, keyInput?: strin
 export function mapAtendimentoToSupabaseRow(a: Atendimento): any {
   return {
     id: a.id,
+    numero_pedido: a.numeroPedido,
     nome: a.nome,
     telefone: a.telefone,
     email: a.email || '',
@@ -150,6 +151,7 @@ export function mapAtendimentoToSupabaseRow(a: Atendimento): any {
 export function mapSupabaseRowToAtendimento(row: any): Atendimento {
   return {
     id: Number(row.id),
+    numeroPedido: row.numero_pedido ? Number(row.numero_pedido) : undefined,
     nome: row.nome || '',
     telefone: row.telefone || '',
     email: row.email || '',
@@ -202,6 +204,12 @@ export function mapEmpresaToSupabaseRow(e: EmpresaConfig): any {
     logo: e.logo || '',
     cor: e.cor || '#eab308',
     termos_padrao: e.termosPadrao || '',
+    notif_status: e.notifStatus ?? true,
+    notif_orcamento: e.notifOrcamento ?? true,
+    notif_agendamento: e.notifAgendamento ?? true,
+    notif_lembrete: e.notifLembrete ?? true,
+    notif_alteracao: e.notifAlteracao ?? true,
+    notif_finalizacao: e.notifFinalizacao ?? true,
     atualizado_em: new Date().toISOString(),
   };
 }
@@ -224,5 +232,11 @@ export function mapSupabaseRowToEmpresa(row: any): EmpresaConfig {
     logo: row.logo || '',
     cor: row.cor || '#eab308',
     termosPadrao: row.termos_padrao || '',
+    notifStatus: row.notif_status ?? true,
+    notifOrcamento: row.notif_orcamento ?? true,
+    notifAgendamento: row.notif_agendamento ?? true,
+    notifLembrete: row.notif_lembrete ?? true,
+    notifAlteracao: row.notif_alteracao ?? true,
+    notifFinalizacao: row.notif_finalizacao ?? true,
   };
 }

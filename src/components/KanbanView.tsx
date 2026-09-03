@@ -227,7 +227,7 @@ export const KanbanView: React.FC = () => {
                           {/* Card Top Row: ID & Priority */}
                           <div className="flex items-center justify-between gap-2 mb-2">
                             <span className="font-mono text-[10px] font-bold text-zinc-500">
-                              #{String(a.id).padStart(4, '0')}
+                              Pedido nº {a.numeroPedido ? String(a.numeroPedido).padStart(2, '0') : a.id}
                             </span>
                             <span
                               className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${prioridadeCfg.bg} ${prioridadeCfg.text}`}

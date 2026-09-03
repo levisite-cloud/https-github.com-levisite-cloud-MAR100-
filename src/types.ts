@@ -53,6 +53,7 @@ export interface ItemOrcamento {
 
 export interface Atendimento {
   id: number;
+  numeroPedido?: number;
   nome: string;
   telefone: string;
   email?: string;
@@ -85,6 +86,20 @@ export interface Atendimento {
   atualizadoEm?: string;
 }
 
+export interface WhatsAppLog {
+  id: string;
+  atendimentoId: number;
+  telefone: string;
+  tipo: 'status' | 'orcamento' | 'agendamento' | 'lembrete' | 'erro';
+  statusAnterior?: string;
+  statusNovo?: string;
+  mensagem: string;
+  dataHora: string;
+  resultado: 'sucesso' | 'erro';
+  erroDetalhe?: string;
+  tentativas: number;
+}
+
 export interface EmpresaConfig {
   nome: string;
   cnpj: string;
@@ -101,6 +116,13 @@ export interface EmpresaConfig {
   logo: string;
   cor: string;
   termosPadrao: string;
+  // Notificações Bot
+  notifStatus?: boolean;
+  notifOrcamento?: boolean;
+  notifAgendamento?: boolean;
+  notifLembrete?: boolean;
+  notifAlteracao?: boolean;
+  notifFinalizacao?: boolean;
 }
 
 export interface ToastMessage {
