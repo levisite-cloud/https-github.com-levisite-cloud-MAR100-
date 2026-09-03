@@ -27,8 +27,15 @@ export default defineConfig(() => {
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {
-        ignored: ['**/node_modules/**'],
+      watch: {
+        ignored: [
+          '**/node_modules/**',
+          '**/.wwebjs_auth/**',
+          '**/.wwebjs_cache/**',
+          '**/whatsapp-session/**',
+          '**/.git/**',
+          '**/dist/**',
+        ],
       },
     },
   };

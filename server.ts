@@ -616,7 +616,19 @@ setTimeout(() => {
 async function start() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true, hmr: false },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+        watch: {
+          ignored: [
+            '**/.wwebjs_auth/**',
+            '**/.wwebjs_cache/**',
+            '**/whatsapp-session/**',
+            '**/node_modules/**',
+            '**/.git/**',
+          ],
+        },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
