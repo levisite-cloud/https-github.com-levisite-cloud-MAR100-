@@ -33,7 +33,7 @@ import {
   PRIORIDADE_CONFIG,
 } from '../utils/formatters';
 import { PrioridadeAtendimento, StatusAtendimento, ItemOrcamento } from '../types';
-import { printOrcamentoPDF, generateOrcamentoHTML } from '../utils/pdfGenerator';
+import { printOrcamentoPDF, generateOrcamentoHTML, generateAgendamentoHTML } from '../utils/pdfGenerator';
 import { generateGoogleCalendarUrl, downloadIcsCalendarFile } from '../utils/calendarHelpers';
 
 export const AtendimentoDetailModal: React.FC = () => {
@@ -234,6 +234,57 @@ export const AtendimentoDetailModal: React.FC = () => {
   };
 
   const [sendingOrcamento, setSendingOrcamento] = useState(false);
+  const [sendingAgendamento, setSendingAgendamento] = useState(false);
+
+  const handleSendAgendamentoPDF = async () => {
+    if (!atendimento.telefone) {
+      addToast('Atenção', 'Este cliente não tem telefone cadastrado.', 'warning');
+      return;
+    }
+    const currentAtendimento = getCurrentAtendimentoSnapshot();
+    const html = generateAgendamentoHTML(currentAtendimento, empresa);
+    const firstName = atendimento.nome.split(' ')[0] || 'Cliente';
+    const numDisplay = atendimento.numeroPedido
+      ? String(atendimento.numeroPedido).padStart(2, '0')
+      : atendimento.id;
+    const isInstalacao = status === 'Instalação Agendada';
+    const tipoVisita = isInstalacao ? 'Instalação' : 'Visita/Medição';
+    const dataAgendada = isInstalacao
+      ? (currentAtendimento.dataInstalacao || currentAtendimento.dataPrevista)
+      : (currentAtendimento.dataMedicao || currentAtendimento.dataPrevista);
+
+    setSendingAgendamento(true);
+    addToast('Enviando agendamento...', 'Gerando PDF e enviando via WhatsApp.', 'info');
+    try {
+      const caption =
+        `Olá, *${firstName}*! 📅\n\n` +
+        `Confirmamos sua *${tipoVisita}* referente ao Pedido nº ${numDisplay}.\n\n` +
+        `Segue em anexo a confirmação com todos os detalhes.\n\n` +
+        `Qualquer dúvida, nos chame!\n\nAtt, *${empresa.nome}*`;
+
+      const apiToken = (import.meta as any).env?.VITE_BOT_API_TOKEN || 'marmoraria-secreto';
+      const response = await fetch('/api/bot/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-token': apiToken },
+        body: JSON.stringify({
+          number: atendimento.telefone,
+          message: caption,
+          pdfHtml: html,
+          pdfName: `Agendamento_Pedido${numDisplay}.pdf`,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        addToast('Agendamento Enviado! ✅', `PDF de confirmação enviado para ${atendimento.nome}.`, 'success');
+      } else {
+        addToast('Falha no Envio', data.error || 'Verifique se o robô está conectado.', 'error');
+      }
+    } catch (err: any) {
+      addToast('Erro', 'Falha na conexão com o bot.', 'error');
+    } finally {
+      setSendingAgendamento(false);
+    }
+  };
 
   const handleSendOrcamentoBot = async () => {
     if (!atendimento.telefone) {
@@ -725,6 +776,16 @@ export const AtendimentoDetailModal: React.FC = () => {
 
           <div className="flex items-center gap-2 ml-auto">
             
+
+            <button
+              onClick={handleSendAgendamentoPDF}
+              disabled={sendingAgendamento}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/40 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+              title="Enviar confirmação de agendamento em PDF via WhatsApp"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>{sendingAgendamento ? '⏳ Enviando...' : '📅 Agendamento PDF (WhatsApp)'}</span>
+            </button>
 
             <button
               onClick={handleSendPDFWhatsApp}

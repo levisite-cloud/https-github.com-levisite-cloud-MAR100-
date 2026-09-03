@@ -373,3 +373,131 @@ function escapeHtml(str: string | undefined | null): string {
     .replace(/\n/g, '<br>');
 }
 
+export function generateAgendamentoHTML(atendimento: Atendimento, empresa: EmpresaConfig): string {
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+  const numPedido = atendimento.numeroPedido
+    ? String(atendimento.numeroPedido).padStart(2, '0')
+    : String(atendimento.id).padStart(5, '0');
+
+  const isInstalacao = atendimento.status === 'Instalação Agendada';
+  const tipoVisita = isInstalacao ? 'INSTALAÇÃO' : 'VISITA / MEDIÇÃO';
+  const dataAgendada = isInstalacao
+    ? atendimento.dataInstalacao || atendimento.dataPrevista
+    : atendimento.dataMedicao || atendimento.dataPrevista;
+  const dataFormatada = dataAgendada ? formatDate(dataAgendada) : 'A confirmar';
+  const horario = atendimento.horaPrevista || '—';
+
+  const logoHtml = empresa.logo
+    ? `<img src="${empresa.logo}" alt="Logo" style="max-height: 60px; max-width: 150px; object-fit: contain;" />`
+    : `<div style="width: 48px; height: 48px; border-radius: 8px; background: ${empresa.cor || '#0052cc'}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800;">${(empresa.nome || 'M').charAt(0)}</div>`;
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmação de Agendamento — ${escapeHtml(empresa.nome)}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 12px; line-height: 1.5; color: #0f172a; background: #fff; padding: 0;
+    }
+    .sheet { max-width: 800px; margin: 0 auto; padding: 36px 40px; }
+    .header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      border-bottom: 2px solid ${empresa.cor || '#0052cc'}; padding-bottom: 18px; margin-bottom: 22px;
+    }
+    .company-title { font-size: 18px; font-weight: 800; color: ${empresa.cor || '#0052cc'}; margin-bottom: 2px; }
+    .company-meta { font-size: 10.5px; color: #475569; line-height: 1.6; }
+    .badge-box { text-align: right; }
+    .badge {
+      display: inline-block; background: ${empresa.cor || '#0052cc'}; color: #fff;
+      font-weight: 800; font-size: 13px; padding: 5px 14px; border-radius: 4px; margin-bottom: 4px;
+    }
+    .badge-meta { font-size: 11px; color: #475569; }
+    .highlight-card {
+      background: ${empresa.cor || '#0052cc'}15;
+      border: 2px solid ${empresa.cor || '#0052cc'}40;
+      border-radius: 10px; padding: 20px 24px; margin-bottom: 20px; text-align: center;
+    }
+    .highlight-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: ${empresa.cor || '#0052cc'}; margin-bottom: 6px; }
+    .highlight-date { font-size: 26px; font-weight: 900; color: ${empresa.cor || '#0052cc'}; }
+    .highlight-time { font-size: 15px; font-weight: 700; color: #334155; margin-top: 2px; }
+    .section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+      color: ${empresa.cor || '#0052cc'}; border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px; margin-bottom: 10px;
+    }
+    .info-grid {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 14px 16px; margin-bottom: 18px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; font-size: 11.5px;
+    }
+    .field-label { font-weight: 600; color: #64748b; margin-right: 6px; }
+    .field-val { color: #0f172a; font-weight: 500; }
+    .obs-box {
+      background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px;
+      padding: 12px 16px; font-size: 11px; color: #78350f; margin-bottom: 18px;
+    }
+    .footer-stamp {
+      margin-top: 24px; text-align: center; font-size: 9.5px;
+      color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 8px;
+    }
+    @media print {
+      body { background: #fff !important; }
+      .sheet { padding: 10px 14px; }
+      @page { margin: 1.2cm; size: A4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="header">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        ${logoHtml}
+        <div>
+          <h1 class="company-title">${escapeHtml(empresa.nome)}</h1>
+          ${empresa.slogan ? `<div style="font-size:10.5px;color:#64748b;margin-bottom:4px;">${escapeHtml(empresa.slogan)}</div>` : ''}
+          <div class="company-meta">
+            ${empresa.tel ? `Tel: ${escapeHtml(empresa.tel)} • ` : ''}${empresa.email ? `${escapeHtml(empresa.email)}` : ''}<br>
+            ${empresa.endereco ? `${escapeHtml(empresa.endereco)}` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="badge-box">
+        <div class="badge">AGENDAMENTO</div>
+        <div class="badge-meta" style="font-weight:700;color:#0f172a;font-size:12px;">Pedido nº ${numPedido}</div>
+        <div class="badge-meta">Emissão: ${dataHoje}</div>
+      </div>
+    </div>
+
+    <div class="highlight-card">
+      <div class="highlight-label">📅 ${tipoVisita} AGENDADA</div>
+      <div class="highlight-date">${dataFormatada}</div>
+      ${horario !== '—' ? `<div class="highlight-time">🕐 Horário: ${horario}</div>` : ''}
+    </div>
+
+    <div class="section-title">Dados do Cliente e Obra</div>
+    <div class="info-grid">
+      <div><span class="field-label">Cliente:</span> <span class="field-val" style="font-weight:700;">${escapeHtml(atendimento.nome)}</span></div>
+      <div><span class="field-label">Telefone:</span> <span class="field-val">${escapeHtml(atendimento.telefone)}</span></div>
+      ${atendimento.email ? `<div><span class="field-label">E-mail:</span> <span class="field-val">${escapeHtml(atendimento.email)}</span></div>` : ''}
+      ${atendimento.responsavel ? `<div><span class="field-label">Responsável:</span> <span class="field-val">${escapeHtml(atendimento.responsavel)}</span></div>` : ''}
+      <div style="grid-column: 1 / -1;"><span class="field-label">Endereço da Obra:</span> <span class="field-val">${escapeHtml(atendimento.endereco || 'Não informado')}</span></div>
+      <div><span class="field-label">Serviço:</span> <span class="field-val">${escapeHtml(atendimento.servico)}</span></div>
+      <div><span class="field-label">Material:</span> <span class="field-val" style="color:${empresa.cor || '#0052cc'};font-weight:700;">${escapeHtml(atendimento.material)}</span></div>
+      ${atendimento.acabamento ? `<div style="grid-column: 1 / -1;"><span class="field-label">Acabamento:</span> <span class="field-val">${escapeHtml(atendimento.acabamento)}</span></div>` : ''}
+    </div>
+
+    <div class="obs-box">
+      ⚠️ <strong>Importante:</strong> Por favor, garanta que o local esteja <strong>acessível e desimpedido</strong> na data e horário agendados.
+      ${atendimento.obs ? `<br><br>📝 <strong>Observações:</strong> ${escapeHtml(atendimento.obs)}` : ''}
+    </div>
+
+    <div class="footer-stamp">
+      Documento gerado em ${dataHoje} • ${escapeHtml(empresa.nome)} • Em caso de dúvidas, entre em contato: ${escapeHtml(empresa.tel || empresa.whatsapp || '')}
+    </div>
+  </div>
+</body>
+</html>`;
+}
