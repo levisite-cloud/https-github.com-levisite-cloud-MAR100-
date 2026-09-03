@@ -1,6 +1,6 @@
 @echo off
 setlocal
-chcp 65001 >nul
+set "PATH=%PATH%;C:\Program Files\nodejs;C:\Users\samsung\AppData\Local\hermes\node;%APPDATA%\npm"
 title MARMORARIA IMPERIAL - SUPER ROBO
 
 echo.
