@@ -134,3 +134,20 @@ export interface ToastMessage {
 
 export type ViewType = 'dashboard' | 'kanban' | 'atendimentos' | 'novo' | 'config';
 
+export interface WhatsAppBotStatus {
+  isReady: boolean;
+  isConnecting: boolean;
+  hasQr: boolean;
+  qrCode: string | null;
+  number: string | null;
+  name: string | null;
+  profilePic: string | null;
+  lastConnectionTime: string | null;
+  lastDisconnectionTime: string | null;
+  lastError: string | null;
+  messagesProcessed: number;
+  errorCount: number;
+  reconnectAttempts: number;
+  uptime: number;
+  logs: string[];
+}

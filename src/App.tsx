@@ -8,6 +8,7 @@ import { NovoAtendimentoView } from './components/NovoAtendimentoView';
 import { ConfiguracoesView } from './components/ConfiguracoesView';
 import { AtendimentoDetailModal } from './components/AtendimentoDetailModal';
 import { ToastContainer } from './components/ToastContainer';
+import { WhatsAppModal } from './components/WhatsAppModal';
 import { LayoutDashboard, Kanban, FileText, PlusCircle, Settings } from 'lucide-react';
 
 const MobileBottomNav: React.FC = () => {
@@ -84,6 +85,7 @@ const MainContent: React.FC = () => {
 
       {/* Global Modals */}
       <AtendimentoDetailModal />
+      <WhatsAppModal />
       <ToastContainer />
     </main>
   );

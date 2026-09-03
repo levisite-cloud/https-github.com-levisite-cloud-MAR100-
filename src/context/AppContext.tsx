@@ -5,7 +5,9 @@ import {
   StatusAtendimento,
   ToastMessage,
   ViewType,
+  WhatsAppBotStatus,
 } from '../types';
+import { io } from 'socket.io-client';
 import {
   DEFAULT_EMPRESA_CONFIG,
   INITIAL_ATENDIMENTOS,
@@ -66,6 +68,12 @@ interface AppContextType {
   saveSupabaseCredentials: (url: string, key: string) => Promise<{ success: boolean; message: string }>;
   disconnectSupabase: () => void;
   syncAllToSupabase: () => Promise<{ success: boolean; message: string }>;
+  botStatus: WhatsAppBotStatus;
+  botLoading: boolean;
+  isWhatsAppModalOpen: boolean;
+  setIsWhatsAppModalOpen: (open: boolean) => void;
+  connectBot: () => Promise<void>;
+  disconnectBot: (logout?: boolean) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -129,6 +137,124 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  // WhatsApp Bot State & Sockets
+  const [botStatus, setBotStatus] = useState<WhatsAppBotStatus>({
+    isReady: false,
+    isConnecting: false,
+    hasQr: false,
+    qrCode: null,
+    number: null,
+    name: null,
+    profilePic: null,
+    lastConnectionTime: null,
+    lastDisconnectionTime: null,
+    lastError: null,
+    messagesProcessed: 0,
+    errorCount: 0,
+    reconnectAttempts: 0,
+    uptime: 0,
+    logs: [],
+  });
+  const [botLoading, setBotLoading] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+
+  const apiToken = (import.meta as any).env?.VITE_BOT_API_TOKEN || 'marmoraria-secreto';
+
+  useEffect(() => {
+    // 1. Fetch initial status from server
+    fetch('/api/bot/status')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data === 'object') {
+          setBotStatus((prev) => ({ ...prev, ...data }));
+        }
+      })
+      .catch(() => {});
+
+    // 2. Connect via Socket.IO
+    const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
+
+    socket.on('bot:status', (status: any) => {
+      setBotStatus((prev) => ({ ...prev, ...status }));
+    });
+
+    socket.on('bot:qr', (qr: string) => {
+      setBotStatus((prev) => ({ ...prev, qrCode: qr, hasQr: true, isConnecting: true }));
+      setIsWhatsAppModalOpen(true);
+    });
+
+    socket.on('bot:log', (logObj: any) => {
+      if (logObj?.message) {
+        setBotStatus((prev) => ({
+          ...prev,
+          logs: [...prev.logs.slice(-49), `[${logObj.timestamp || new Date().toISOString()}] ${logObj.message}`],
+        }));
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  const connectBot = useCallback(async () => {
+    setBotLoading(true);
+    setIsWhatsAppModalOpen(true);
+    try {
+      const res = await fetch('/api/bot/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-token': apiToken,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        addToast('WhatsApp Bot', 'Iniciando conexão e gerando QR Code...', 'info');
+      } else {
+        addToast('Erro ao Conectar', data.error || 'Falha ao iniciar bot.', 'error');
+      }
+    } catch (err: any) {
+      addToast('Erro', 'Não foi possível conectar ao servidor.', 'error');
+    } finally {
+      setBotLoading(false);
+    }
+  }, [apiToken, addToast]);
+
+  const disconnectBot = useCallback(async (logout: boolean = true) => {
+    setBotLoading(true);
+    try {
+      const res = await fetch('/api/bot/disconnect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-token': apiToken,
+        },
+        body: JSON.stringify({ logout }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBotStatus((prev) => ({
+          ...prev,
+          isReady: false,
+          isConnecting: false,
+          hasQr: false,
+          qrCode: null,
+          number: null,
+          name: null,
+          profilePic: null,
+        }));
+        addToast('WhatsApp Desconectado', logout ? 'Sessão encerrada e deslogada.' : 'Desconectado.', 'info');
+      } else {
+        addToast('Erro ao Desconectar', data.error || 'Falha ao desconectar.', 'error');
+      }
+    } catch (err: any) {
+      addToast('Erro', 'Não foi possível desconectar.', 'error');
+    } finally {
+      setBotLoading(false);
+    }
+  }, [apiToken, addToast]);
 
   // 2. Load and listen from Supabase (if active)
   useEffect(() => {
@@ -709,6 +835,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         saveSupabaseCredentials,
         disconnectSupabase,
         syncAllToSupabase,
+        botStatus,
+        botLoading,
+        isWhatsAppModalOpen,
+        setIsWhatsAppModalOpen,
+        connectBot,
+        disconnectBot,
       }}
     >
       {children}

@@ -11,6 +11,8 @@ import {
   X,
   Sparkles,
   Database,
+  MessageCircle,
+  QrCode,
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -23,6 +25,8 @@ export const Header: React.FC = () => {
     setSearchTerm,
     isSupabaseActive,
     cloudSynced,
+    botStatus,
+    setIsWhatsAppModalOpen,
   } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -84,6 +88,56 @@ export const Header: React.FC = () => {
             <Database className="w-3 h-3 text-zinc-400" />
             <span className={isSupabaseActive ? 'text-emerald-400 font-semibold' : 'text-zinc-300'}>
               {isSupabaseActive ? 'Supabase Sincronizado' : 'Banco em Nuvem Ativo'}
+            </span>
+          </button>
+
+          {/* Botão de Conectar / Desconectar / QR Code do WhatsApp */}
+          <button
+            type="button"
+            onClick={() => setIsWhatsAppModalOpen(true)}
+            title={
+              botStatus.isReady
+                ? `WhatsApp Conectado (+${botStatus.number || ''}). Clique para ver status ou desconectar.`
+                : botStatus.hasQr
+                ? 'QR Code disponível para leitura! Clique para escanear.'
+                : botStatus.isConnecting
+                ? 'Iniciando WhatsApp...'
+                : 'Clique para conectar o WhatsApp com QR Code.'
+            }
+            className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-sm ${
+              botStatus.isReady
+                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border-emerald-500/40'
+                : botStatus.hasQr
+                ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/50 animate-pulse'
+                : botStatus.isConnecting
+                ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                : 'bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-white border-zinc-700'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                botStatus.isReady
+                  ? 'bg-emerald-400 animate-pulse'
+                  : botStatus.hasQr
+                  ? 'bg-amber-400 animate-ping'
+                  : botStatus.isConnecting
+                  ? 'bg-blue-400'
+                  : 'bg-zinc-500'
+              }`}
+            />
+            {botStatus.hasQr ? (
+              <QrCode className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <MessageCircle className={`w-3.5 h-3.5 ${botStatus.isReady ? 'text-emerald-400' : 'text-zinc-400'}`} />
+            )}
+            <span>
+              {botStatus.isReady
+                ? 'WhatsApp Conectado'
+                : botStatus.hasQr
+                ? '📷 Escanear QR'
+                : botStatus.isConnecting
+                ? 'Conectando...'
+                : 'Conectar WhatsApp'}
             </span>
           </button>
 
@@ -153,10 +207,32 @@ export const Header: React.FC = () => {
           </nav>
 
           {/* Controles Mobile */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-1.5">
+            {/* WhatsApp Mobile Button */}
+            <button
+              type="button"
+              onClick={() => setIsWhatsAppModalOpen(true)}
+              title="WhatsApp QR Code / Conexão"
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                botStatus.isReady
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                  : botStatus.hasQr
+                  ? 'bg-amber-500/25 text-amber-300 border-amber-500/50 animate-pulse'
+                  : botStatus.isConnecting
+                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                  : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+              }`}
+            >
+              {botStatus.hasQr ? (
+                <QrCode className="w-4 h-4" />
+              ) : (
+                <MessageCircle className="w-4 h-4" />
+              )}
+            </button>
+
             <button
               onClick={() => setActiveView('novo')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-zinc-950 bg-amber-400 hover:bg-amber-300 font-extrabold text-xs shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-zinc-950 bg-amber-400 hover:bg-amber-300 font-extrabold text-xs shadow-sm cursor-pointer"
             >
               <PlusCircle className="w-4 h-4 stroke-[2.5px]" />
               <span>Novo</span>
@@ -218,6 +294,36 @@ export const Header: React.FC = () => {
                 </button>
               );
             })}
+
+            {/* WhatsApp Bot item na gaveta mobile */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsWhatsAppModalOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer mt-1"
+            >
+              <div className="flex items-center gap-3">
+                {botStatus.hasQr ? (
+                  <QrCode className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <MessageCircle className={`w-4 h-4 ${botStatus.isReady ? 'text-emerald-400' : 'text-zinc-400'}`} />
+                )}
+                <span>WhatsApp Robô (QR Code)</span>
+              </div>
+              <span
+                className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${
+                  botStatus.isReady
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : botStatus.hasQr
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 animate-pulse'
+                    : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                }`}
+              >
+                {botStatus.isReady ? 'Conectado 🟢' : botStatus.hasQr ? 'Ler QR Code 📷' : 'Conectar'}
+              </span>
+            </button>
           </div>
         )}
       </div>

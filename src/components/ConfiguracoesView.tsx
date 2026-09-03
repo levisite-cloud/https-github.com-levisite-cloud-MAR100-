@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { io } from 'socket.io-client';
 import {
   Building2,
   Palette,
@@ -160,6 +159,11 @@ export const ConfiguracoesView: React.FC = () => {
     saveSupabaseCredentials,
     disconnectSupabase,
     syncAllToSupabase,
+    botStatus,
+    botLoading,
+    connectBot,
+    disconnectBot,
+    setIsWhatsAppModalOpen,
   } = useApp();
 
   const [formData, setFormData] = useState({ ...empresa });
@@ -182,74 +186,12 @@ export const ConfiguracoesView: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [syncActive, setSyncActive] = useState(true);
 
-  // WhatsApp Bot states
-  const [botStatus, setBotStatus] = useState<{
-    isReady: boolean;
-    isConnecting: boolean;
-    hasQr: boolean;
-    qrCode: string | null;
-    number: string | null;
-    name: string | null;
-    profilePic: string | null;
-    lastConnectionTime: string | null;
-    lastDisconnectionTime: string | null;
-    lastError: string | null;
-    messagesProcessed: number;
-    errorCount: number;
-    reconnectAttempts: number;
-    uptime: number;
-    logs: string[];
-  }>({
-    isReady: false, isConnecting: false, hasQr: false, qrCode: null,
-    number: null, name: null, profilePic: null,
-    lastConnectionTime: null, lastDisconnectionTime: null,
-    lastError: null, messagesProcessed: 0, errorCount: 0,
-    reconnectAttempts: 0, uptime: 0, logs: [],
-  });
-  const [botLoading, setBotLoading] = useState(false);
-  const socketRef = useRef<any>(null);
-
-  useEffect(() => {
-    const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
-    socketRef.current = socket;
-
-    socket.on('bot:status', (status: any) => setBotStatus(status));
-    socket.on('bot:qr', (qr: string) => setBotStatus(prev => ({ ...prev, qrCode: qr, hasQr: true })));
-    socket.on('bot:log', () => {});
-
-    return () => { socket.disconnect(); };
-  }, []);
-
-  const apiToken = (import.meta as any).env?.VITE_BOT_API_TOKEN || 'marmoraria-secreto';
-
   const handleConnectBot = async () => {
-    setBotLoading(true);
-    try {
-      await fetch('/api/bot/connect', { 
-        method: 'POST',
-        headers: { 'x-api-token': apiToken }
-      });
-      addToast('Conectando', 'Iniciando conexão com WhatsApp...', 'info');
-    } catch {
-      addToast('Erro', 'Não foi possível iniciar a conexão.', 'error');
-    } finally {
-      setBotLoading(false);
-    }
+    await connectBot();
   };
 
-  const handleDisconnectBot = async () => {
-    setBotLoading(true);
-    try {
-      await fetch('/api/bot/disconnect', { 
-        method: 'POST',
-        headers: { 'x-api-token': apiToken }
-      });
-      addToast('Desconectado', 'WhatsApp desconectado.', 'info');
-    } catch {
-      addToast('Erro', 'Não foi possível desconectar.', 'error');
-    } finally {
-      setBotLoading(false);
-    }
+  const handleDisconnectBot = async (logout: boolean = true) => {
+    await disconnectBot(logout);
   };
 
   const formatUptime = (seconds: number) => {
@@ -691,6 +633,16 @@ export const ConfiguracoesView: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsWhatsAppModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-750 text-zinc-200 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
+                  title="Abrir janela com QR Code ampliado"
+                >
+                  <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Janela QR Code</span>
+                </button>
+
                 {!botStatus.isReady && !botStatus.isConnecting && (
                   <button
                     type="button"
@@ -706,7 +658,7 @@ export const ConfiguracoesView: React.FC = () => {
                   <button
                     type="button"
                     disabled={botLoading}
-                    onClick={handleDisconnectBot}
+                    onClick={() => handleDisconnectBot(false)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-rose-400 text-xs font-bold rounded-lg border border-zinc-700 transition-colors cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />

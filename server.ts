@@ -418,10 +418,28 @@ app.post('/api/bot/connect', verifyBotToken, async (_req, res) => {
   }
 });
 
-app.post('/api/bot/disconnect', verifyBotToken, async (_req, res) => {
+app.post('/api/bot/disconnect', verifyBotToken, async (req, res) => {
   try {
     manualDisconnect = true;
+    const shouldLogout = Boolean(req.body?.logout || req.query?.logout);
+    if (shouldLogout && whatsappClient) {
+      try {
+        await whatsappClient.logout();
+      } catch (err) {
+        addLog(`Aviso ao fazer logout do WhatsApp: ${String(err)}`);
+      }
+    }
     await disconnectWhatsApp();
+    if (shouldLogout) {
+      try {
+        if (fs.existsSync(SESSION_PATH)) {
+          fs.rmSync(SESSION_PATH, { recursive: true, force: true });
+          addLog('🗑️ Sessão do WhatsApp excluída com sucesso.');
+        }
+      } catch (err) {
+        addLog(`Aviso ao remover pasta de sessão: ${String(err)}`);
+      }
+    }
     startedAt = null;
     botStatus.isReady = false;
     botStatus.isConnecting = false;
@@ -432,7 +450,7 @@ app.post('/api/bot/disconnect', verifyBotToken, async (_req, res) => {
     botStatus.profilePic = null;
     botStatus.lastDisconnectionTime = new Date().toISOString();
     io.emit('bot:status', botStatus);
-    addLog('🔴 WhatsApp desconectado manualmente.');
+    addLog(shouldLogout ? '🔴 WhatsApp deslogado e desconectado.' : '🔴 WhatsApp desconectado manualmente.');
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
